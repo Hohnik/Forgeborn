@@ -25,6 +25,20 @@ WoW Forever launches on 4 Nov 2026 (interface version 16001 on beta).
 - [docs/wow-forever-api-notes.md](docs/wow-forever-api-notes.md): the WoW Forever UI and
   API facts the addon relies on, read from Blizzard's UI source (build 1.60.1.70450)
 
+## Figures
+
+[docs/figures/anvil/anvil.html](docs/figures/anvil/anvil.html) is an interactive figure of
+the rules: a drop hammer draws one of 20 tokens per strike, the tray shows the odds for the
+current quality, the hearth fills toward Frenzy and the post shows the level. It runs on
+[model.mjs](docs/figures/anvil/model.mjs), the same v0.3 numbers as the playtest engine.
+Download the file and open it in a browser: click or Space strikes, S sells.
+
+![Fig 1, the anvil](docs/images/anvil.png)
+
+Rebuild it with `node docs/figures/anvil/build.mjs` (Node 18+). It is drawn with the
+[Anatomy](https://github.com/wheresryan22/anatomy) isometric kit (MIT), vendored in
+`docs/figures/vendor/anatomy`.
+
 ## Playtest tools
 
 Small Python scripts used to test the rules before the Lua version exists.
@@ -41,6 +55,7 @@ python3 ev_per_swing.py   # expected value of one more swing per quality
 
 ```
 docs/            design writeup, API notes, diagrams
+docs/figures/    interactive figures and the code that builds them
 tools/playtest/  Python playtest engine and balance scripts
 ```
 

@@ -10,3 +10,7 @@ __pycache__/
 Thumbs.db
 .vscode/
 .idea/
+
+# Fixed-theme figure builds (for checks)
+docs/figures/*/*-light.html
+docs/figures/*/*-dark.html
