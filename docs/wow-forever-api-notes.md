@@ -140,7 +140,126 @@ Source: `Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua` (`Regist
 
 **Randomness**: `math.random` is fine for play. Use your own seeded generator (for example xorshift32) if you want shareable seeds and "this deck really had these odds" replays. That answers ForgeTax's biggest complaint, which was players believing the odds were rigged.
 
-## 6. Where to read more
+## 6. Game events (the event log)
+
+The Forever client documents **1,814 events** in `Blizzard_APIDocumentationGenerated`. You can watch them live in game with `/etrace` (Blizzard_EventTrace).
+Everything below was read from that documentation for build 1.60.1.70450. None of it has been tested on a live client.
+
+**Listening:** `frame:RegisterEvent("NAME")` with an `OnEvent` script, `frame:RegisterUnitEvent("NAME", "player")` for unit events, or `EventRegistry:RegisterFrameEventAndCallback("NAME", fn)`.
+
+### Flags on events
+
+| Flag | Count | Meaning for us |
+|---|---|---|
+| `SynchronousEvent` | 1,690 | Fires immediately while the game state changes. The normal case. |
+| `UniqueEvent` | 147 | Our reading: coalesced, so it fires at most once per batch. Example: `BAG_UPDATE_DELAYED` fires once after a burst of `BAG_UPDATE`s. |
+| `SecretInChatMessagingLockdown` | 62 | The payload becomes a secret value while chat is locked down (e.g. `CHAT_MSG_SYSTEM`, `GUILD_MOTD`, `READY_CHECK`). |
+| `SecretWhenUnitIdentityRestricted`, `SecretWhenUnitSpellCastRestricted`, `SecretWhenAurasRestricted` … | 23 | The payload is secret while that restriction is active (e.g. `PARTY_KILL`, `UNIT_DIED`, `UNIT_AURA`). |
+| `SecretPayloads` | 7 | The payload is always secret (e.g. `UNIT_IN_RANGE_UPDATE`). |
+| `HasRestrictions` | 7 | Restricted to secure code (combat log events, below). |
+| `CallbackEvent` | 12 | Delivered through a callback rather than a plain frame event. |
+
+### Addon restriction states
+
+`C_RestrictedActions` says when the restrictions above are active:
+
+- `C_RestrictedActions.IsAddOnRestrictionActive(type)`, `GetAddOnRestrictionState(type)` and `InCombatLockdown()`.
+- `ADDON_RESTRICTION_STATE_CHANGED(type, state)` fires *before* a restriction becomes active and *after* it ends.
+- `ADDON_ACTION_BLOCKED` / `ADDON_ACTION_FORBIDDEN(isTainted, function)` report a blocked call.
+
+`Enum.AddOnRestrictionType`:
+
+| Value | Name | When |
+|---|---|---|
+| 0 | Combat | The player is actively affecting combat |
+| 1 | Encounter | The player is in an instance encounter |
+| 2 | ChallengeMode | An active challenge or keystone dungeon |
+| 3 | PvPMatch | An active PvP match |
+| 4 | Map | A map that applies addon restrictions |
+| 5 | Chat | Addon chat communications are restricted |
+
+### The combat log is closed to addons
+
+`COMBAT_LOG_EVENT_UNFILTERED` still exists but is flagged `HasRestrictions`.
+`GetCurrentEventInfo` moved to `C_CombatLogSecure`, also restricted. Blizzard's own combat log window (`Blizzard_CombatLogProcessor`) is its only reader.
+`C_CombatLog.IsCombatLogRestricted()` reports the state. The old alias `CombatLogGetCurrentEventInfo` points at a function the docs no longer list in `C_CombatLog`.
+Plan as if the combat log is unavailable. Forgeborn doesn't need it.
+
+### Events Forgeborn uses
+
+Parameters in brackets are the payload; `?` means it can be nil.
+
+**Addon lifecycle**
+
+| Event | Payload | Use |
+|---|---|---|
+| `ADDON_LOADED` | addOnName, containsBindings | Saved data is ready; initialise |
+| `PLAYER_LOGIN` | | Build the UI |
+| `PLAYER_ENTERING_WORLD` | isInitialLogin, isReloadingUi | Seed the "already seen" item GUIDs on first login |
+| `PLAYER_LOGOUT`, `ADDONS_UNLOADING` | closingClient | Last chance to tidy saved data |
+
+**Loot (what counts as a drop)**
+
+| Event | Payload | Use |
+|---|---|---|
+| `LOOT_READY` | autoloot | The loot window's contents are known: read `GetNumLootItems`, `GetLootSlotInfo`, `GetLootSlotLink` (global functions, used by Blizzard's loot frame) |
+| `LOOT_OPENED` | autoLoot, isFromItem | `isFromItem` is true when looting a container item (e.g. a lockbox), not a corpse |
+| `LOOT_SLOT_CLEARED` | lootSlot | A slot was taken |
+| `LOOT_CLOSED` | | Loot window closed |
+| `START_LOOT_ROLL` / `LOOT_ROLLS_COMPLETE` | rollID, rollTime, lootHandle? / lootHandle | Group loot rolls |
+| `LOOT_ITEM_ROLL_WON` | itemLink, rollQuantity, rollType, roll, upgraded | You won a roll; gives the item link directly |
+| `ENCOUNTER_LOOT_RECEIVED` | encounterID, itemID, itemLink, quantity, itemName, fileName | Boss loot that went to someone |
+| `SHOW_LOOT_TOAST` | typeIdentifier, itemLink, quantity, … personalLootToast … | The loot toast; a backup signal |
+| `ITEM_PUSH` | bagSlot, iconFileID | An item entered a bag |
+| `CHAT_MSG_LOOT` | text, playerName, … | "You receive loot" lines. Not flagged as secret, but localised; use only as a fallback |
+
+**Sources that are not drops (to exclude)**
+
+| Event | Payload | Use |
+|---|---|---|
+| `QUEST_LOOT_RECEIVED` | questID, itemLink, quantity | Quest reward items |
+| `QUEST_TURNED_IN` | questID, xpReward, moneyReward | Quest hand-in |
+| `MERCHANT_SHOW` / `MERCHANT_CLOSED` | | Items arriving while a vendor is open were bought |
+| `MAIL_SHOW` / `MAIL_CLOSED` | | Mailed items |
+| `TRADE_SHOW` / `TRADE_CLOSED` | | Traded items |
+| `TRADE_SKILL_SHOW` | | Crafted items |
+| `AUCTION_HOUSE_SHOW` | | Auction house purchases |
+
+**Bags and items**
+
+| Event | Payload | Use |
+|---|---|---|
+| `BAG_UPDATE` | bagID | One bag changed |
+| `BAG_UPDATE_DELAYED` | | All bag changes settled (unique); scan for new GUIDs here |
+| `BAG_NEW_ITEMS_UPDATED` | | The "new item" glow changed |
+| `ITEM_COUNT_CHANGED` | itemID | Count of an item changed (unique) |
+| `ITEM_CHANGED` | previousHyperlink, newHyperlink | An item's link changed |
+| `ITEM_DATA_LOAD_RESULT` / `GET_ITEM_INFO_RECEIVED` | itemID, success | Async item data arrived |
+| `PLAYER_EQUIPMENT_CHANGED` | equipmentSlot, hasCurrent | Gear changed |
+
+**Character, world and time**
+
+| Event | Payload | Use |
+|---|---|---|
+| `PLAYER_LEVEL_UP` | level, … | Orders scale to the new level |
+| `PLAYER_REGEN_DISABLED` / `ENABLED` | | Entering / leaving combat |
+| `ZONE_CHANGED_NEW_AREA` | | Zone changed |
+| `PLAYER_DEAD` | | The player died |
+| `HARDCORE_DEATHS` | memberName | A Hardcore death alert |
+| `ENCOUNTER_START` / `ENCOUNTER_END` / `BOSS_KILL` | encounterID, encounterName, … | Boss fights |
+| `PARTY_KILL` / `UNIT_DIED` | attackerGUID, targetGUID / unitGUID | Kills; payload is secret while unit identity is restricted |
+| `TIME_PLAYED_MSG` | totalTimePlayed, timePlayedThisLevel | Answer to `/played` |
+
+There is **no daily or weekly reset event**. For crafting orders, read `C_DateAndTime.GetSecondsUntilDailyReset()` and `GetSecondsUntilWeeklyReset()` on login and set a `C_Timer` for the next reset.
+
+### Loot pipeline (recommended)
+
+1. On `PLAYER_ENTERING_WORLD` with `isInitialLogin`, record every item GUID in the bags as seen.
+2. On `LOOT_READY`, store the item links of the loot window's equippable weapon and armour slots as "expected drops". Also add `LOOT_ITEM_ROLL_WON` links.
+3. On `BAG_UPDATE_DELAYED`, scan the bags for new GUIDs. A new item whose link matches an expected drop goes to the Workbench.
+4. Ignore new items while a merchant, mailbox, trade, auction house or trade-skill window is open, or when `QUEST_LOOT_RECEIVED` names them.
+
+## 7. Where to read more
 
 - Generated API docs (643 files) for this exact client: `Interface/AddOns/Blizzard_APIDocumentationGenerated/*.lua`. In game, use `/api` or `/dump`.
 - Widget API: `SimpleFrameScriptObjectAPIDocumentation.lua`, `SimpleScriptRegionAPIDocumentation.lua`, `FrameAPITooltipDocumentation.lua`.
