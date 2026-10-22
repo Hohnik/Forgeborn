@@ -1,0 +1,12 @@
+# Playtest engine state
+tools/playtest/state.json
+__pycache__/
+
+# Packager output (BigWigs packager)
+.release/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
