@@ -15,15 +15,72 @@ part of the Forever interface. Your real items, gold and stats are never touched
 
 ## Status
 
-Design phase. The rules are at v0.3 after a chat playtest; no addon code exists yet.
-WoW Forever launches on 4 Nov 2026 (interface version 16001 on beta).
+Version 1.0.0: the whole design is implemented (rules v0.3, Workbench, Shop, lockboxes,
+tools, Display case, records, crafting orders, reputation, English and German).
+
+It is tested outside the game, against Blizzard's UI source for the Forever client
+(build 1.60.1.70450, see [Tests](#tests)). It has not run on a live Forever client yet:
+Forever launches on 4 Nov 2026. If the client says the addon is out of date, the live
+interface number differs from `16001`; tick "Load out of date AddOns" or update
+`## Interface` in `Forgeborn.toc`.
+
+## Install
+
+Copy this repository into the `Interface/AddOns` folder of your WoW Forever installation
+and name the folder `Forgeborn` (so the path ends in `Interface/AddOns/Forgeborn/Forgeborn.toc`).
+The `docs`, `tests` and `tools` folders are not needed in game; the release package leaves
+them out (`.pkgmeta`).
+
+## How to play
+
+- **Loot** a weapon or armour piece from a mob, a chest or a won loot roll. A forge copy
+  lands on the **Workbench** (4 slots; when it's full, the weakest item goes).
+  Rings, necklaces, trinkets, shirts, tabards, quest rewards, crafted, bought and mailed
+  items don't count.
+- **Click** a Workbench item to put it on the **anvil**. The bar above it shows the odds of
+  the next swing: Break, −1, 0, +1, +2.
+- **Forge** strikes once. Every 7 normal swings fill the embers and **Frenzy** fires by
+  itself: the next 3 swings can't Miss, Crack or Break.
+- **Sell** turns the item into addon gold. Or drag it into the **Display case** to keep it
+  as a trophy (a small bonus to every later sale), or onto a **crafting order** card and
+  click **Send**.
+- The **Shop** sells lockboxes (the only source of tools), sharpening stones and faction
+  wares; each faction's tab shows your reputation. Tools sit on a **shelf of 4**.
+- Hover anything for details; right-click items, tools and trophies for more options.
+  Hover the window's portrait (top left) for your forge records.
+
+Commands: `/forge` (open the window), `/forge shop`, `/forge records`, `/forge settings`,
+`/forge reset`. The minimap addon menu opens the window (left-click) or the Shop
+(right-click). Options are under Settings → AddOns → Forgeborn.
 
 ## Docs
 
 - [docs/design.md](docs/design.md): the full design and implementation writeup
-  (rules, economy, crafting orders, interface, implementation plan, open questions)
+  (rules, economy, crafting orders, interface, implementation, open questions)
 - [docs/wow-forever-api-notes.md](docs/wow-forever-api-notes.md): the WoW Forever UI and
   API facts the addon relies on, read from Blizzard's UI source (build 1.60.1.70450)
+- [CHANGELOG.md](CHANGELOG.md)
+
+## Tests
+
+Lua 5.1 (the game's Lua version), [luacheck](https://github.com/lunarmodules/luacheck) and Python 3:
+
+```sh
+lua5.1 tests/run.lua                 # 89 tests: rules, game logic and the window
+luacheck .                           # no undefined globals, no unused variables
+python3 tools/apicheck/check_api.py  # every Blizzard API the addon uses exists in Forever
+```
+
+- `tests/test_rules.lua` checks the rules engine against the design tables and the Python
+  playtest numbers, including the balance goals.
+- `tests/test_game.lua` and `tests/test_ui.lua` load every file of `Forgeborn.toc` into a
+  strict mock of the client (`tests/wowmock.lua`) and play it: loot, the anvil, orders,
+  the Shop, drag and drop, menus, popups, combat, settings, in English and German.
+  Widgets only have the methods the Forever client documents; anything else fails.
+- `check_api.py` checks every global, `C_` function, template, font, atlas, texture,
+  sound and event against Blizzard's UI source for Forever. Its lists are built by
+  `tools/apicheck/gen_fixture.py` from a clone of
+  [Gethe/wow-ui-source](https://github.com/Gethe/wow-ui-source) (branch `forever`).
 
 ## Figures
 
@@ -39,7 +96,7 @@ Download the file and open it in a browser: click or Space strikes, S sells.
 </picture>
 
 The GIF is one seeded run: ten strikes take a gray blade to blue +14 (a crack, three quality
-step and a 3-strike Frenzy), then it sells.
+steps and a 3-strike Frenzy), then it sells.
 
 Rebuild the page with `node docs/figures/anvil/build.mjs` (Node 18+) and the GIFs with
 `node docs/figures/anvil/record.mjs` (needs Playwright and ffmpeg). It is drawn with the
@@ -48,7 +105,7 @@ Rebuild the page with `node docs/figures/anvil/build.mjs` (Node 18+) and the GIF
 
 ## Playtest tools
 
-Small Python scripts used to test the rules before the Lua version exists.
+Small Python scripts used to test the rules before the Lua version existed.
 
 ```sh
 cd tools/playtest
@@ -61,10 +118,11 @@ python3 ev_per_swing.py   # expected value of one more swing per quality
 ## Layout
 
 ```
-docs/            design writeup, API notes, diagrams
-docs/figures/    interactive figures and the code that builds them
+Forgeborn.toc    the addon (loads only in WoW Forever)
+*.lua            rules engine, saved data, economy, orders, loot detection, events
+UI/              the window, the order cards, the Shop, the settings page
+tests/           test runner, strict client mock, tests
+tools/apicheck/  API existence check against Blizzard's Forever UI source
 tools/playtest/  Python playtest engine and balance scripts
+docs/            design writeup, API notes, figures and images
 ```
-
-The addon itself (`Forgeborn_Forever.toc` and the Lua files) will live at the
-repository root once development starts.

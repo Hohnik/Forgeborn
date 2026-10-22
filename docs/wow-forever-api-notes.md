@@ -259,7 +259,24 @@ There is **no daily or weekly reset event**. For crafting orders, read `C_DateAn
 3. On `BAG_UPDATE_DELAYED`, scan the bags for new GUIDs. A new item whose link matches an expected drop goes to the Workbench.
 4. Ignore new items while a merchant, mailbox, trade, auction house or trade-skill window is open, or when `QUEST_LOOT_RECEIVED` names them.
 
-## 7. Where to read more
+## 7. Lessons from building Forgeborn
+
+Found while building the addon (22 Oct 2026), by reading the Forever UI source:
+
+- **`ShowUIPanel` and `HideUIPanel` refuse addon calls in combat.** Both start with `CheckProtectedFunctionsAllowed()`, which fails when `InCombatLockdown()` is true and the caller is tainted. A window that must work in combat shows and hides itself with `frame:Show()` / `frame:Hide()` while in combat. If a frame isn't in a panel slot, `HideUIPanel` falls back to a plain `frame:Hide()` once combat is over.
+- **The close button calls `HideUIPanel`.** `UIPanelCloseButton_OnClick` first calls `parent.onCloseCallback(button)` and only hides the panel if that returns true. Set `frame.onCloseCallback` to close the frame yourself (and return false) so the X works in combat. `ButtonFrameTemplate` has the same close button (from `ButtonFrameBaseTemplate`).
+- **Bag-style slots are the intrinsic `ItemButton`** (`CreateFrame("ItemButton", ...)`, 37×37, used by Forever's own equipment flyout). `LargeItemButtonTemplate` and `SmallItemButtonTemplate` are quest-reward rows with a name plate. Set `button.emptyBackgroundAtlas = "bags-item-slot64"` for the empty-slot art the bags use. `SetItemButtonQuality(button, quality)` draws no border for Poor (gray), like real bags.
+- **`ColoredProgressBarTemplate` exists only in Forever** (`Blizzard_SharedXML/Camelot/ProgressBars`). Its mixin has `SetFillPercent(0..1)` and `SetText(text)`; Forever's Reputation window colours the fill with `bar.Fill:SetVertexColor(FACTION_BAR_COLORS[standing]:GetRGB())`.
+- **`AnimatedShineTemplate` lives in `Blizzard_AnimatedShine`,** a separate Blizzard addon only the socketing UI depends on. An addon that wants a glow can animate its own texture instead (`ButtonHilight-Square`, `ADD` blend, an `Alpha` animation).
+- **StaticPopup text goes through `SetFormattedText(dialog.text, text_arg1, text_arg2)`.** With `text = "%s"` and the message passed as `text_arg1`, a `%` inside the message is safe. `OnAccept` receives `(dialog, data, data2)`; returning nothing closes the popup.
+- **Settings:** `Settings.RegisterVerticalLayoutCategory(name)`, then `Settings.RegisterProxySetting(category, "VARIABLE", Settings.VarType.Boolean, label, default, getter, setter)` and `Settings.CreateCheckbox(category, setting, tooltip)`, then `Settings.RegisterAddOnCategory(category)`. `Settings.OpenToCategory(category:GetID())` opens it. Proxy settings read the saved table every time, so they keep working after the addon replaces its saved data.
+- **Addon compartment:** `AddonCompartmentFunc` is called as `func(addonName, mouseButtonName)`; `AddonCompartmentFuncOnEnter` and `OnLeave` get `(addonName, menuButton)`.
+- **Tabs:** `PanelTabButtonTemplate` has `parentArray="Tabs"`. `PanelTemplates_SetNumTabs`, `PanelTemplates_SetTab` and `PanelTemplates_TabResize(tab, padding, nil, minWidth, maxWidth)` find tabs through `frame.Tabs[i]` or, without that table, the global `<FrameName>Tab<i>`; naming tabs that way works in both cases. The tab's `OnShow` reads `parent.maxTabWidth`.
+- **Loot functions** (`GetNumLootItems`, `GetLootSlotType`, `GetLootSlotLink`, `GetLootSlotInfo`) are not in the generated docs but Forever's loot frame calls them, so they exist.
+- **Item GUIDs** (`C_Item.GetItemGUID(ItemLocation:CreateFromBagAndSlot(bag, slot))`) are plain values, not secret, so a bag scan can compare them.
+- **Sounds:** Forever loads the Mainline `SoundKitConstants.lua`. `IG_ABILITY_ICON_PICKUP` doesn't exist; `UI_CURSOR_PICKUP_OBJECT` and `IG_ABILITY_ICON_DROP` do.
+
+## 8. Where to read more
 
 - Generated API docs (643 files) for this exact client: `Interface/AddOns/Blizzard_APIDocumentationGenerated/*.lua`. In game, use `/api` or `/dump`.
 - Widget API: `SimpleFrameScriptObjectAPIDocumentation.lua`, `SimpleScriptRegionAPIDocumentation.lua`, `FrameAPITooltipDocumentation.lua`.

@@ -6,7 +6,7 @@ Oct 22, 2026 · @Niklas
 
 Forgeborn is a push-your-luck forging minigame addon for World of Warcraft: Forever. You take a copy of an item you really looted and strike it up the gray → white → green → blue → purple → orange ladder, one hit at a time. Every hit can break it, so you sell before it does.
 
-Status: the rules are at v0.3 after a chat playtest on 22 Oct 2026. No addon code exists yet. Forever launches on 4 Nov 2026 on a client whose UI source we have read (build 1.60.1.70450).
+Status: the rules are at v0.3 after a chat playtest on 22 Oct 2026. The addon is implemented as version 1.0.0 (22 Oct 2026) and tested outside the game against Blizzard's UI source for the Forever client (build 1.60.1.70450). It has not run on a live client yet; Forever launches on 4 Nov 2026.
 
 The five pillars:
 
@@ -134,7 +134,7 @@ Sold items give addon gold. Gold buys lockboxes, and lockboxes drop tools at fix
 - **The Shop.** Addon gold is spent in a Shop. It sells lockboxes in several tiers (named after Classic rogue lockboxes), one-use items, and faction wares that reputation unlocks. Ordinary tools are never sold directly; they come from lockboxes. Reputation lives in the Shop too: each faction has its own tab with its reputation bar and the wares its ranks unlock.
 - **Shelf of 4.** A new tool replaces an old one when the shelf is full. The shelf never grows.
 
-### Lockboxes (draft)
+### Lockboxes
 
 | Lockbox | Price | Contents |
 | --- | --- | --- |
@@ -144,27 +144,27 @@ Sold items give addon gold. Gold buys lockboxes, and lockboxes drop tools at fix
 
 At the playtest's value level (1–3 gold per sold item at character level 20), a Bronze box costs 2–5 good sales. Prices need tuning against level-60 values.
 
-### Tool catalogue (draft)
+### Tool catalogue
 
-Tools have their own quality colour. Names are real Classic blacksmithing items.
+Tools have their own quality colour. Names are real Classic blacksmithing items; the German names are the official client names. The values every rarity step gives are in [First tuning values](#first-tuning-values-v100).
 
 | Tool | Rarity | Effect |
 | --- | --- | --- |
 | Blacksmith Hammer (Schmiedehammer) | Common | +2 Hit tokens |
-| Weak Flux (Schwaches Flussmittel) | Common | −1 Crack token |
+| Weak Flux (Schwacher Fluxus) | Common | −1 Crack token |
 | Heavy Sharpening Stone (Schwerer Wetzstein) | Common | Weapons are worth +25% |
-| Strong Flux (Starkes Flussmittel) | Rare | −2 Crack tokens |
+| Strong Flux (Starker Fluxus) | Rare | −2 Crack tokens |
 | Thorium Bar (Thoriumbarren) | Rare | Armour is worth +20% |
 | Fiery Core (Feuerkern) | Rare | Great hits give +3 instead of +2 |
 | Lava Core (Lavakern) | Rare | +2 Great-hit tokens |
 | Dark Iron Bar (Dunkeleisenbarren) | Rare | After a Miss, the next Hit gives +2 |
-| Arcanite Bar (Arkanitbarren) | Epic | −1 Break token |
+| Arcanite Bar (Arkanitbarren) | Epic | −2 Break tokens (−3 at legendary) |
 | Blood of the Mountain (Blut des Berges) | Epic | Frenzy lasts 5 swings instead of 3 |
-| Elemental Flux (Elementarflussmittel) | Epic | Frenzy fires every 5 swings instead of 7 |
+| Elemental Flux (Elementarfluxus) | Epic | Frenzy fires every 5 swings instead of 7 |
 | Righteous Orb (Rechtschaffene Kugel) | Epic | Orange counts ×9 instead of ×6.5 |
-| Sulfuron Ingot (Sulfuronbarren) | Legendary | The first Break of each item becomes a Crack |
+| Sulfuron Ingot (Sulfuronblock) | Legendary | The first Break of each item becomes a Crack |
 
-### One-use items (draft)
+### One-use items
 
 - Coarse Sharpening Stone: the next swing is safe.
 - Dense Sharpening Stone: the next 3 swings are safe.
@@ -244,26 +244,26 @@ The odds bar above the item shows every outcome of the next swing (Break, −1, 
 
 | Element | Native building block | Notes |
 | --- | --- | --- |
-| Window | `PortraitFrameTemplate`, registered in `UIPanelWindows` with area left | Opens beside the Character frame and closes with Esc, like Forever's own Legacy window |
+| Window | `PortraitFrameTemplate`, registered in `UIPanelWindows` with area left | Opens beside the Character frame and closes with Esc, like Forever's own Legacy window; in combat it shows and hides itself |
 | Odds bar | 5 textures in one row, widths set from the current bag; percentages in `GameFontHighlightSmall` | Break red, −1 orange, 0 grey, +1 light green, +2 green |
-| Anvil slot | `CreateFrame("ItemButton")` / `LargeItemButtonTemplate` + `SetItemButtonQuality` | Real icon, quality border, count hidden; drag source |
+| Anvil slot | `CreateFrame("ItemButton")`, scaled up, + `SetItemButtonQuality`; empty slots use the bags' `bags-item-slot64` art | Real icon, quality border; drag source and target. (`LargeItemButtonTemplate` and `SmallItemButtonTemplate` are quest-reward rows with a name plate, not bag slots.) |
 | Item name and value | `GameFontNormalLarge` in the quality colour; `GetMoneyString` | Value in gold, silver and copper |
-| Forge button | `BigRedThreeSliceButtonTemplate` or `SharedGoldRedButtonTemplate` | The only big button |
+| Forge button | `SharedButtonLargeTemplate` (the red three-slice button Forever's character frame uses) | The only big button |
 | Sell button | `UIPanelButtonTemplate` | The only other action button |
-| Embers | 7 small textures | Fill toward the automatic Frenzy |
-| Workbench and Shelf | `SmallItemButtonTemplate` rows inside an `InsetFrameTemplate` | Drag between Workbench and anvil; tooltips via `GameTooltip` |
-| Display case | A row of `SmallItemButtonTemplate` drop slots | Drag the anvil item here to keep it as a trophy |
+| Embers | Up to 7 small round textures (circle mask) | Fill toward the automatic Frenzy; fewer with Elemental Flux |
+| Workbench and Shelf | `ItemButton` rows inside an `InsetFrameTemplate` | Drag between Workbench and anvil; tooltips via `GameTooltip` |
+| Display case | A row of `ItemButton` drop slots | Drag the anvil item here to keep it as a trophy |
 | Shop button | `UIPanelButtonTemplate` in the footer | Opens the Shop; the only footer button |
 | Shop | A second panel from `ButtonFrameTemplate` with tabs (PanelTabButtonTemplate): a General tab plus one tab per faction | General: lockboxes and one-use items. Each faction tab: its reputation bar (ColoredProgressBarTemplate) and the wares its ranks unlock |
 | Lockbox opening | `StaticPopupDialogs` to confirm, then a reveal in the slot | Rare drops use the quality colour |
 
-The orders panel shows 4 order cards, 3 daily and 1 weekly, each with faction, ask, item-level range, reward, an item drop slot, Send and Reject, plus the number of queued orders. Forged copies are not real items, so drag and drop runs on our own item buttons (`RegisterForDrag`, `OnDragStart`, `OnReceiveDrag`) rather than the game cursor.
+The orders panel shows 4 order cards, 3 daily and 1 weekly (5 with the capital city's 4th slot), each with faction, ask, item-level range, reward, an item drop slot, Send and Reject, plus the number of queued orders. Forged copies are not real items, so drag and drop runs on our own item buttons (`RegisterForDrag`, `OnDragStart`, `OnDragStop` and a check for the drop target under the mouse) rather than the game cursor.
 
 Entry points and behaviour:
 
 - Minimap addon menu (the addon compartment exists in Forever), `/forge`, and a page in the standard Settings panel.
-- Sounds from `SOUNDKIT`, e.g. the artifact-forge rank-up sound on a quality-up and the legendary loot toast on orange. All sounds still need checking in game.
-- `AnimatedShineTemplate` on a quality-up. A short red flash and the slot emptying on a Break.
+- Sounds from `SOUNDKIT`, e.g. the reforge sound on a strike, the artifact-forge rank-up sound on a quality-up and the legendary loot toast on orange. All sounds still need checking in game.
+- A glow in the quality colour on a quality-up (the item buttons' own highlight art, tinted and pulsed; `AnimatedShineTemplate` lives in a separate Blizzard addon). A short red flash and the slot emptying on a Break.
 - German and English text from day one. The window stays usable in combat; nothing is locked.
 
 ## WoW Forever: technical facts
@@ -284,33 +284,41 @@ Forever runs on the modern retail engine and UI framework under the internal cod
 
 The secret-value rules protect combat data. A self-contained minigame does not touch it, so they should not matter here.
 
-## Implementation plan
+## Implementation (v1.0.0)
 
-The addon is about six Lua files around a pure-Lua rules engine. The engine can be tested and balanced outside the game, the same way the Python playtest engine was.
+The addon is about a dozen Lua files around a pure-Lua rules engine. The window is built in Lua from Blizzard's stock templates (no XML). Every file runs outside the game in the tests, against a strict mock of the client.
 
 ![Planned architecture](images/architecture.png)
 
-*planned architecture · no code yet*
+*architecture · the files below implement it*
 
-Loot enters from bag events, the engine owns all rules, and everything is saved after each swing so a disconnect never loses a forge.
+Loot enters from bag events, the engine owns all rules, and everything is kept in the saved data after each action, so a disconnect never loses a forge.
 
 ### TOC
 
 ```toc
 ## Interface: 16001
 ## Title: Forgeborn
-## Notes: A push-your-luck forge for the items you loot.
 ## AllowLoadGameType: camelot
 ## SavedVariablesPerCharacter: ForgebornCharDB
 ## IconTexture: Interface\Icons\Trade_BlackSmithing
 ## AddonCompartmentFunc: Forgeborn_OnCompartmentClick
+## AddonCompartmentFuncOnEnter: Forgeborn_OnCompartmentEnter
+## AddonCompartmentFuncOnLeave: Forgeborn_OnCompartmentLeave
 Locales.lua
+Data.lua
 Rules.lua
-Loot.lua
+Util.lua
+Database.lua
 Economy.lua
+Forge.lua
 Orders.lua
-UI.xml
-UI.lua
+Loot.lua
+UI\Widgets.lua
+UI\Main.lua
+UI\Orders.lua
+UI\Shop.lua
+UI\Options.lua
 Core.lua
 ```
 
@@ -318,49 +326,113 @@ Core.lua
 
 | File | Job |
 | --- | --- |
-| `Rules.lua` | Bags per quality, draws, value formula, embers and Frenzy, break. No WoW API calls, so it runs in plain Lua. |
-| `Loot.lua` | Detects newly looted weapons and armour and puts them on the Workbench. |
-| `Economy.lua` | Addon gold, lockbox odds, tools, one-use items, the 4-slot shelf. |
-| `Orders.lua` | Daily and weekly arrivals, the 3-slot board and queue, hand-in checks, rewards, reputation and faction unlocks. |
-| `UI.xml` / `UI.lua` | The window from stock templates, the orders panel, tooltips, sounds, animations. |
-| `Core.lua` | Events, slash command, compartment entry, Settings page, saving. |
-| `Locales.lua` | German and English strings. |
+| `Data.lua` | Every number: bags, value factors, tools and their rarity steps, lockboxes, factions and wares, order settings. No WoW API calls. |
+| `Rules.lua` | Bags with tools, draws, safe swings, Frenzy, cracks, breaks, value. No WoW API calls, so it runs in plain Lua. |
+| `Locales.lua` | English and German text. Item names come from the client when it has them, in any language. |
+| `Database.lua` | Saved data per character, defaults, and repair of damaged data. |
+| `Economy.lua` | Addon gold, reputation, the Shop, lockboxes, the shelf, one-use items, the Display case. |
+| `Forge.lua` | The anvil and the Workbench: strike, sell, park, display, records. |
+| `Orders.lua` | Daily and weekly arrivals at WoW's resets, the board and queue, hand-in checks, rewards, rejects. |
+| `Loot.lua` | Finds new drops and puts a forge copy on the Workbench. |
+| `UI/*.lua` | The window, the order cards, the Shop, the Settings page, drag and drop, tooltips, menus, effects. |
+| `Core.lua` | Events, `/forge`, the minimap addon menu. |
 
-### Saved data (draft)
+### What the window does
 
-```lua
-ForgebornCharDB = {            -- everything is per character
-  version = 1,
-  gold = 0,                    -- addon gold, in copper
-  shelf = { "FIERY_CORE" },    -- up to 4 tool ids
-  consumables = { COARSE_STONE = 0 },
-  display = {},                -- trophies: itemID, startQuality, level, value, date
-  stats = { swings = 0, breaks = 0, sold = 0 },
-  seen = {},                   -- item GUIDs already counted as loot
-  workbench = {},              -- up to 4: itemID, guid, quality, itemLevel, level
-  anvil = nil,                 -- itemID, startQuality, level, embers, frenzy
-  orders = { daily = {}, weekly = nil, queue = {}, nextDaily = 0, nextWeekly = 0 },
-  rep = { THORIUM = 0, STEAMWHEEDLE = 0, CITY = 0, ARGENT = 0 },
-}
-```
+- **Opening:** `ShowUIPanel` places the window like a native panel (left side, Esc closes it). Blizzard blocks `ShowUIPanel` and `HideUIPanel` for addons in combat, so in combat the window and the Shop show and hide themselves directly; nothing is locked in combat.
+- **Drag and drop** runs on the addon's own buttons: the source button starts a drag and on release the drop target under the mouse takes it. Every drag also has a click or right-click menu: click a Workbench item to put it on the anvil, right-click items, tools and trophies for their options, click a sharpening stone to use it.
+- **No match hints:** order cards never highlight a fitting item; Send checks the item and says what doesn't fit.
+- **Records** show in the tooltip of the window's portrait and with `/forge records`.
+- **Settings page** (Settings → AddOns → Forgeborn): sounds on or off, and chat lines for new Workbench items.
 
-### Key techniques
+### Loot detection
 
-- **Loot detection:** on login, record every item GUID already in the bags as seen. On `BAG_UPDATE_DELAYED`, any new GUID of a weapon or armour piece goes to the Workbench. WoW files rings, necklaces and trinkets under armour, so they are filtered out by equip slot (finger, neck, trinket). To count only real drops, also note the item links shown in the loot window (`LOOT_READY`, `GetLootSlotLink`) and accept only matching items. Chat parsing is avoided: it is localised and may be restricted in instances.
-- **Item data:** `C_Item.GetItemInfo` gives name, quality, item level and icon. Use `Item:CreateFromItemID(id):ContinueOnItemLoad(...)`, because data arrives asynchronously.
-- **Randomness:** `math.random` over the token bag, with replacement. No seeds and no pity protection.
-- **Native window:** `PortraitFrameTemplate` plus `UIPanelWindows["ForgebornFrame"] = { area = "left", pushable = 1 }`, opened with `ShowUIPanel`.
-- **Saving:** state is written on every swing; WoW writes SavedVariables on logout and reload.
+1. A loot window's weapons and armour become expected drops, by item ID, for 5 minutes (10 for a won roll, `LOOT_ITEM_ROLL_WON`). A loot window from a container item in the bags (`LOOT_OPENED` with `isFromItem`) doesn't count.
+2. On `BAG_UPDATE_DELAYED` the bags are scanned for item GUIDs that weren't there before. A new item that matches an expected drop goes to the Workbench. Items already in the bags at login or reload never count.
+3. Nothing counts while a merchant, mailbox, trade, auction house or bank window is open; quest rewards (`QUEST_LOOT_RECEIVED`) cancel a matching expectation.
 
-### Build order
+Known gap: items handed out by a master looter arrive without a loot window or roll, so they don't count.
 
-1. Window, slash command and compartment entry, with a fake item on the anvil.
-2. Rules engine in pure Lua, ported from the playtest engine, with a small simulator.
-3. Loot watcher and Workbench.
-4. Sell, Display case and addon gold.
-5. Lockboxes, tools and the shelf.
-6. Polish: sounds, shine, tooltips, Settings page, German and English.
-7. Check on the live Forever client from 4 Nov: interface number, art, sounds.
+### Saved data
+
+`ForgebornCharDB` (per character): `gold` (copper), `shelf` (4 slots of tool id and rank), `pendingTool`, `consumables`, `display` (trophies), `workbench` (4 slots), `anvil`, `orders` (daily list, weekly, queue, the last reset times), `rep` per faction, `records`, `stats`, `settings`. A forge copy keeps its item ID, name, link, icon, start quality, item level, kind, slot, armour type, level, embers, Frenzy and safe swings, and whether the Sulfuron Ingot has saved it.
+
+### First tuning values (v1.0.0)
+
+Every value below was chosen when the addon was built, to match the proposals above. They are first values to check in play.
+
+**Tool rarity steps.** A duplicate raises the owned tool one step (Common → Rare → Epic → Legendary). A duplicate of a legendary tool is salvaged for 1g, 5g, 25g or 100g, by the duplicate's own rarity.
+
+| Tool | Common | Rare | Epic | Legendary |
+| --- | --- | --- | --- | --- |
+| Blacksmith Hammer | +2 Hit | +3 | +4 | +5 |
+| Weak Flux | −1 Crack | −2 | −3 | −4 |
+| Heavy Sharpening Stone | weapons +25% | +35% | +50% | +75% |
+| Strong Flux | | −2 Crack | −3 | −4 |
+| Thorium Bar | | armour +20% | +30% | +45% |
+| Fiery Core | | Great hit +3 | +4 | +5 |
+| Lava Core | | +2 Great hit | +3 | +4 |
+| Dark Iron Bar | | Hit after a Miss +2 | +3 | +4 |
+| Enchanted Thorium Bar (Thorium Brotherhood) | | +1 Hit, −1 Miss | +2/−2 | +3/−3 |
+| Arcanite Bar | | | −2 Break | −3 |
+| Blood of the Mountain | | | Frenzy 5 swings | 7 |
+| Elemental Flux | | | Frenzy every 5 | every 4 |
+| Righteous Orb | | | orange ×9 | ×12 |
+| Elemental Sharpening Stone (Thorium Brotherhood) | | | purple and orange +20% | +35% |
+| Sulfuron Ingot | | | | first Break → Crack |
+
+Token tools stack and never take a token count below 0. A new tool with a full shelf waits in a slot under the shelf; drag it onto a shelf slot to replace a tool, or discard it. Lockboxes and tools can't be bought while one waits.
+
+**Lockboxes** (named after Classic rogue lockboxes):
+
+| Lockbox | Price | Unlock | Contents |
+| --- | --- | --- | --- |
+| Ornate Bronze Lockbox | 5g | always | 10% rare tool, 25% common tool, 40% Coarse Sharpening Stone, 10% Dense Sharpening Stone, 15% purse of 1–4g |
+| Iron Lockbox | 20g | Steamwheedle Honored | 3% epic tool, 30% rare, 40% common, 12% Dense Sharpening Stone, 15% purse of 5–15g |
+| Thorium Lockbox | 100g | Steamwheedle Revered | 1% legendary tool, 15% epic, 84% rare |
+
+**One-use items.** Coarse Sharpening Stone (2g): the next swing is safe. Dense Sharpening Stone (5g, capital city Friendly): the next 3 swings are safe. Safe swings work like Frenzy swings: Miss, Crack and Break are redrawn and no ember is added. They come after any Frenzy swings and stay with the item when it is parked.
+
+**Faction wares:**
+
+| Faction | Friendly | Honored | Revered | Exalted |
+| --- | --- | --- | --- | --- |
+| Thorium Brotherhood | | Enchanted Thorium Bar, 40g | Elemental Sharpening Stone, 150g | Sulfuron Ingot, 600g |
+| Steamwheedle Cartel | | Iron Lockbox | Thorium Lockbox | lockboxes 20% cheaper |
+| Capital city | Dense Sharpening Stone | 4th daily order slot | one-use items 25% cheaper | one-use items 50% cheaper |
+| Argent Dawn | +1 Display case slot | +1 slot | trophy bonuses ×1.5 | +1 slot, trophy bonuses ×2 |
+
+The capital city is Stormwind (humans, night elves), Ironforge (dwarves, gnomes), Orgrimmar (orcs, trolls, tauren) or Undercity (undead).
+
+**Display case.** 3 slots, up to 6 with the Argent Dawn. Each trophy adds to every sale: green +0.25%, blue +0.5%, purple +0.75%, orange +1%.
+
+**Crafting orders.**
+
+- Item level: within 5 of the character's level when the order arrives; no upper limit at level 60.
+- Minimum quality (white, green, blue, purple): 15/45/30/10% by default, 0/30/50/20% for the Steamwheedle Cartel, 30/50/20/0% for the capital city. Weekly orders ask for 3 items at 20/50/30/0%.
+- Thorium Brotherhood: a weapon group (one-hand, two-hand, ranged) or, from level 40, a plate armour slot. Weekly: weapons or plate armour.
+- Steamwheedle Cartel: any armour slot or weapon group. Weekly: anything.
+- Capital city: a cloth, leather or mail armour slot. Weekly: armour of that type.
+- Argent Dawn: any armour slot. Weekly: armour.
+- Rewards and rejects as proposed: daily 2× sale value and 500 reputation, weekly 4× each item's value and 2,000 reputation when the last item is in, +50% per quality step above the ask, a reject costs 125 (daily) or 500 (weekly) reputation. Reputation never drops below Neutral.
+
+### Balance check
+
+The tests compute the best stop-or-swing strategy (Frenzy and the Sulfuron Ingot included) as a ratio to selling at once. 1.00 means selling at once is best.
+
+| Tools | Blue | Purple | Orange |
+| --- | --- | --- | --- |
+| None | 1.00 | 1.00 | 1.00 |
+| Epic Hammer, Fiery Core, Lava Core, Arcanite Bar | 2.14 | 1.14 | 1.00 |
+| Legendary Sulfuron Ingot, Fiery Core, Lava Core, Arcanite Bar | 5.31 | 2.84 | 1.62 |
+
+Without tools, selling at once stays the best play from blue up, as the playtest found. Epic tools make purple worth forging; orange needs the legendary Sulfuron Ingot. No tool set removes every Break token from purple or orange. The Arcanite Bar was raised from −1 to −2 Break tokens (−3 at legendary) to reach this; at −4 purple would have become risk-free.
+
+### Tests
+
+- `lua5.1 tests/run.lua`: 89 tests. The rules engine against the tables above and the Python playtest numbers; the game logic and the window inside a strict mock of the client, in English and German.
+- `luacheck .`: no undefined globals and no unused variables.
+- `python3 tools/apicheck/check_api.py`: every global, `C_` function, template, font, atlas, texture, sound and event the addon uses exists in Blizzard's UI source for Forever.
 
 ## API reference
 
@@ -407,7 +479,7 @@ Source paths for each entry are in [wow-forever-api-notes.md](wow-forever-api-no
 
 ## Open questions
 
-Two decisions are still open: tuning and release. Fourteen were decided on 22 Oct 2026, including the four that blocked the first build, and the crafting order system was added the same day.
+Two decisions are still open: tuning and release. Fourteen were decided on 22 Oct 2026, including the four that blocked the first build, and the crafting order system was added the same day. Version 1.0.0 implements all of them with first tuning values.
 
 **Decided on 22 Oct 2026**
 
@@ -429,7 +501,7 @@ Two decisions are still open: tuning and release. Fourteen were decided on 22 Oc
 - [x] A duplicate tool makes the owned tool one rarity step stronger.
 - [x] The Display case holds trophies, and each one gives a small passive bonus.
 - [x] Long-term goal: personal forge records.
-- [ ] Tuning: lockbox prices and odds against level-60 values, the one-use items, the Display case bonus and its slot count, each tool's stronger rarity steps, and the order rewards and reputation amounts.
+- [ ] Tuning: first values are in [First tuning values](#first-tuning-values-v100). Check them in play: lockbox prices and odds against level-60 values, the one-use items, the Display case bonus and its slot count, each tool's rarity steps, and the order rewards and reputation amounts.
 
 **Crafting orders**
 

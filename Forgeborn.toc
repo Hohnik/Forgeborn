@@ -1,0 +1,29 @@
+## Interface: 16001
+## Title: Forgeborn
+## Notes: A push-your-luck forge for the weapons and armour you loot.
+## Notes-deDE: Eine Glücksspiel-Schmiede für die Waffen und Rüstungen, die du erbeutest.
+## Author: Hohnik
+## Version: 1.0.0
+## AllowLoadGameType: camelot
+## SavedVariablesPerCharacter: ForgebornCharDB
+## IconTexture: Interface\Icons\Trade_BlackSmithing
+## AddonCompartmentFunc: Forgeborn_OnCompartmentClick
+## AddonCompartmentFuncOnEnter: Forgeborn_OnCompartmentEnter
+## AddonCompartmentFuncOnLeave: Forgeborn_OnCompartmentLeave
+## Category: Minigames
+
+Locales.lua
+Data.lua
+Rules.lua
+Util.lua
+Database.lua
+Economy.lua
+Forge.lua
+Orders.lua
+Loot.lua
+UI\Widgets.lua
+UI\Main.lua
+UI\Orders.lua
+UI\Shop.lua
+UI\Options.lua
+Core.lua

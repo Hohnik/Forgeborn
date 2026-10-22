@@ -1,0 +1,8 @@
+# BigWigs packager settings (CurseForge and Wago releases).
+package-as: Forgeborn
+
+ignore:
+  - docs
+  - tests
+  - tools
+  - .luacheckrc
