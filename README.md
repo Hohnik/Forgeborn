@@ -33,9 +33,16 @@ current quality, the hearth fills toward Frenzy and the post shows the level. It
 [model.mjs](docs/figures/anvil/model.mjs), the same v0.3 numbers as the playtest engine.
 Download the file and open it in a browser: click or Space strikes, S sells.
 
-![Fig 1, the anvil](docs/images/anvil.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/anvil-dark.gif">
+  <img alt="Fig 1, the anvil: ten strikes take a gray blade to blue +14, with a Frenzy, then it sells" src="docs/images/anvil-light.gif">
+</picture>
 
-Rebuild it with `node docs/figures/anvil/build.mjs` (Node 18+). It is drawn with the
+The GIF is one seeded run: ten strikes take a gray blade to blue +14 (a crack, three quality
+step and a 3-strike Frenzy), then it sells.
+
+Rebuild the page with `node docs/figures/anvil/build.mjs` (Node 18+) and the GIFs with
+`node docs/figures/anvil/record.mjs` (needs Playwright and ffmpeg). It is drawn with the
 [Anatomy](https://github.com/wheresryan22/anatomy) isometric kit (MIT), vendored in
 `docs/figures/vendor/anatomy`.
 

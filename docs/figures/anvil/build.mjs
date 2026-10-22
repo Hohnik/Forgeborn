@@ -495,7 +495,7 @@ idleUntil = 1.4;
 layout();
 describe();
 draw();
-window.__anvil = { strike: (seed) => strikeNow(seed === undefined ? Math.random : random32(seed)), sell: sellNow, state: () => state, setLevel: (level, frenzy = 0, embers = 0) => { state = { ...state, level, frenzy, embers, broken: false }; layout(); describe(); run(); }, still: (on) => { touring = !on; run(); } };
+window.__anvil = { strike: (random) => { strikeNow(typeof random === "function" ? random : random === undefined ? Math.random : random32(random)); run(); }, sell: () => { sellNow(); run(); }, state: () => state, setLevel: (level, frenzy = 0, embers = 0) => { state = { ...state, level, frenzy, embers, broken: false }; layout(); describe(); run(); }, still: (on) => { touring = !on; run(); } };
 `;
 
 const body = k.plateHtml({
