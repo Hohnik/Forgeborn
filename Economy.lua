@@ -225,6 +225,19 @@ function Economy.RemoveTool(slot)
 	return tool
 end
 
+-- A shelf tool and the waiting tool swap places (a shelf tool dragged onto the waiting tool).
+function Economy.SwapPendingTool(slot)
+	local db = ns.db
+	if not db.pendingTool then
+		return nil, "ERR_NO_PENDING_TOOL"
+	end
+	if type(slot) ~= "number" or not db.shelf[slot] then
+		return nil, "ERR_BAD_SLOT"
+	end
+	db.shelf[slot], db.pendingTool = db.pendingTool, db.shelf[slot]
+	return true
+end
+
 function Economy.MoveTool(from, to)
 	local shelf = ns.db.shelf
 	if not shelf[from] or type(to) ~= "number" or to < 1 or to > Data.SHELF_SLOTS then
@@ -349,10 +362,13 @@ function Economy.BuyTool(faction, index)
 	return { kind = "tool", tool = ware.id, rank = rank, price = ware.price, receive = Economy.ReceiveTool(ware.id, rank) }
 end
 
--- Uses a one-use item on the piece on the anvil: the next swings are safe.
-function Economy.UseConsumable(id)
+-- Uses a one-use item on a piece (by uid; the anvil piece if none is given): its next swings are safe.
+function Economy.UseConsumable(id, uid)
 	local def = Data.CONSUMABLES[id]
 	local piece = ns.db.anvil
+	if uid then
+		piece = ns.Forge.Find(uid)
+	end
 	if not def then
 		return nil, "ERR_UNKNOWN"
 	end
@@ -365,6 +381,20 @@ function Economy.UseConsumable(id)
 	ns.db.consumables[id] = ns.db.consumables[id] - 1
 	piece.safe = (piece.safe or 0) + def.safe
 	return def.safe
+end
+
+-- Reorders the Display case: two trophies swap, or a trophy dropped on an empty slot moves to the end.
+function Economy.MoveTrophy(from, to)
+	local display = ns.db.display
+	if not display[from] or type(to) ~= "number" or to < 1 then
+		return nil, "ERR_BAD_SLOT"
+	end
+	if display[to] then
+		display[from], display[to] = display[to], display[from]
+	else
+		table.insert(display, table.remove(display, from))
+	end
+	return true
 end
 
 function Economy.RemoveTrophy(index)

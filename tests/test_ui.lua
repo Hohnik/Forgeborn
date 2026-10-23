@@ -420,6 +420,150 @@ scenario("deDE")
 -- The same scenario as the retail test build (branch retail-test) runs it.
 scenario("enUS", "retail")
 
+T.test("every item slot is a drag source and a drop target", function()
+	local client = newClient()
+	client:Login(nil)
+	local ns, env = client.ns, client.env
+	env.SlashCmdList.FORGEBORN("")
+	local parts = ns.UI.parts
+	local db = ns.db
+	ns.db.orders.daily = {}
+	for _, id in ipairs({ 1, 2 }) do
+		local order = ns.Orders.Generate(false, "ARGENT")
+		order.id, order.group, order.armorType, order.minQuality, order.ilvlMin, order.ilvlMax = 900 + id, "ANY", nil, 0, 1, 60
+		table.insert(db.orders.daily, order)
+	end
+	for _, item in ipairs({ ITEMS.BOOTS, ITEMS.SWORD, ITEMS.SHIRT, ITEMS.HELM }) do
+		loot(client, item)
+	end
+	ns.Changed()
+
+	-- Every slot starts drags and takes drops.
+	local all = { parts.anvil.slot, parts.pending }
+	for _, group in ipairs({ parts.bench, parts.shelf, parts.supplies, parts.display }) do
+		for _, slot in ipairs(group) do
+			table.insert(all, slot)
+		end
+	end
+	for _, card in ipairs(ns.UI.cards) do
+		table.insert(all, card.slot)
+	end
+	local targets = {}
+	for _, target in ipairs(ns.Widgets.Drag.targets) do
+		targets[target.frame] = true
+	end
+	for i, slot in ipairs(all) do
+		T.ok(slot:GetScript("OnDragStart") and slot:GetScript("OnDragStop"), "slot " .. i .. " can be dragged")
+		T.ok(targets[slot], "slot " .. i .. " takes drops")
+	end
+
+	local function at(name)
+		for i = 1, 4 do
+			if db.workbench[i] and db.workbench[i].name == name then
+				return parts.bench[i], i
+			end
+		end
+	end
+	local function free()
+		return parts.bench[ns.Forge.FreeBenchSlot()]
+	end
+	local BOOTS, SWORD, SHIRT, HELM = "Tattered Boots", "Rusty Sword", "Chain Shirt of the Bear", "Blue Plate Helm"
+
+	-- Workbench -> anvil -> Display case -> anvil: the trophy comes back with its level.
+	client:Drag(at(BOOTS), parts.anvil.slot)
+	db.anvil.level = 3
+	client:Drag(parts.anvil.slot, parts.display[1])
+	T.eq(db.anvil, nil); T.eq(db.display[1].name, BOOTS)
+	client:Drag(parts.display[1], parts.anvil.slot)
+	T.eq(db.anvil.name, BOOTS); T.eq(db.anvil.level, 3); T.eq(#db.display, 0)
+	-- Display case -> an empty Workbench slot.
+	client:Drag(parts.anvil.slot, parts.display[1])
+	client:Drag(parts.display[1], free())
+	T.ok(at(BOOTS), "back on the Workbench"); T.eq(#db.display, 0)
+	-- A trophy dropped on an item swaps with it.
+	client:Drag(at(BOOTS), parts.display[1])
+	local _, shirtSlot = at(SHIRT)
+	client:Drag(parts.display[1], parts.bench[shirtSlot])
+	T.eq(db.workbench[shirtSlot].name, BOOTS); T.eq(db.display[1].name, SHIRT)
+	-- An item dropped on a trophy swaps with it too.
+	local _, swordSlot = at(SWORD)
+	client:Drag(parts.bench[swordSlot], parts.display[1])
+	T.eq(db.display[1].name, SWORD); T.eq(db.workbench[swordSlot].name, SHIRT)
+	-- Trophies reorder; an empty case slot adds to the end.
+	client:Drag(at(HELM), parts.display[3])
+	T.eq(db.display[2].name, HELM)
+	client:Drag(parts.display[2], parts.display[1])
+	T.eq(db.display[1].name, HELM); T.eq(db.display[2].name, SWORD)
+	client:Drag(parts.display[1], parts.display[3])
+	T.eq(db.display[1].name, SWORD); T.eq(db.display[2].name, HELM)
+	client:Drag(parts.display[1], free())
+	client:Drag(parts.display[1], free())
+	T.eq(#db.display, 0)
+	T.ok(at(BOOTS) and at(SWORD) and at(SHIRT) and at(HELM), "all four are back on the Workbench")
+
+	-- Sharpening stones: drag a stone onto any item, or an item onto a stone.
+	db.consumables.COARSE_STONE = 3
+	ns.Changed()
+	local _, i = at(SHIRT)
+	client:Drag(parts.supplies[1], at(SHIRT))
+	T.eq(db.workbench[i].safe, 1); T.eq(db.consumables.COARSE_STONE, 2)
+	_, i = at(HELM)
+	client:Drag(at(HELM), parts.supplies[1])
+	T.eq(db.workbench[i].safe, 1); T.eq(db.consumables.COARSE_STONE, 1)
+	client:Drag(at(SWORD), parts.anvil.slot)
+	client:Drag(parts.anvil.slot, parts.supplies[1])
+	T.eq(db.anvil.safe, 1); T.eq(db.consumables.COARSE_STONE, 0)
+
+	-- Order cards: drag the staged item to another card, to the anvil, the Workbench, or off the card.
+	local card1, card2 = ns.UI.cards[1], ns.UI.cards[2]
+	local shirtButton, shirtAt = at(SHIRT)
+	local shirtUID = db.workbench[shirtAt].uid
+	client:Drag(shirtButton, card1.slot)
+	T.eq(ns.UI.staged[901], shirtUID)
+	client:Drag(card1.slot, card2.slot)
+	T.eq(ns.UI.staged[901], nil); T.eq(ns.UI.staged[902], shirtUID)
+	client:Drag(card2.slot, parts.anvil.slot)
+	T.eq(db.anvil.uid, shirtUID); T.eq(ns.UI.staged[902], nil)
+	T.eq(db.workbench[shirtAt].name, SWORD, "the anvil item took the shirt's place")
+	client:Drag(parts.anvil.slot, card1.slot)
+	T.eq(ns.UI.staged[901], shirtUID)
+	client:Drag(card1.slot, parts.bench[shirtAt])
+	T.eq(db.workbench[shirtAt].uid, shirtUID); T.eq(db.anvil.name, SWORD); T.eq(ns.UI.staged[901], nil)
+	client:Drag(parts.bench[shirtAt], card1.slot)
+	client:Drag(card1.slot, nil)
+	T.eq(ns.UI.staged[901], nil, "dropped off the card")
+	T.eq(db.workbench[shirtAt].uid, shirtUID, "the item stays where it is")
+	client:Drag(parts.bench[shirtAt], card1.slot)
+	client:Drag(card1.slot, parts.display[1])
+	T.eq(db.display[1].name, SHIRT); T.eq(ns.UI.staged[901], nil)
+
+	-- A shelf tool dropped on the waiting tool swaps with it.
+	for _, id in ipairs({ "HAMMER", "WEAK_FLUX", "HEAVY_STONE", "LAVA_CORE" }) do
+		ns.Economy.ReceiveTool(id, ns.Data.TOOLS[id].base)
+	end
+	ns.Economy.ReceiveTool("FIERY_CORE", 2)
+	ns.Changed()
+	client:Drag(parts.shelf[2], parts.pending)
+	T.eq(db.shelf[2].id, "FIERY_CORE"); T.eq(db.pendingTool.id, "WEAK_FLUX")
+	client:Drag(parts.shelf[1], parts.shelf[4])
+	T.eq(db.shelf[4].id, "HAMMER"); T.eq(db.shelf[1].id, "LAVA_CORE")
+	T.eq(#client.errors, 0, "no drag failed")
+end)
+
+T.test("trophies from version 1.0 come back as items", function()
+	local client = newClient()
+	client:Login({
+		display = { { itemID = 1002, name = "Rusty Sword", quality = 2, startQuality = 1, level = 6, itemLevel = 18, value = 999 } },
+	})
+	local ns = client.ns
+	T.eq(ns.db.display[1].piece, nil)
+	local piece = ns.Forge.TakeTrophy(1, 2)
+	T.ok(piece, "rebuilt from the item")
+	T.eq(ns.db.workbench[2], piece)
+	T.eq(piece.kind, "weapon"); T.eq(piece.equipLoc, "INVTYPE_WEAPON"); T.eq(piece.level, 6); T.eq(piece.startQuality, 1)
+	T.ok(piece.uid >= 1)
+end)
+
 T.test("Orgrimmar for an orc, and standing names fall back to our own", function()
 	local client = newClient({ race = "Orc", standingLabels = false })
 	client:Login(nil)

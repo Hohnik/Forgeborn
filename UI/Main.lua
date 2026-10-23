@@ -152,8 +152,9 @@ function UI.Act(ok, err)
 	return ok
 end
 
-function UI.Display(uid)
-	local trophy, err = ns.Forge.Display(uid)
+-- index: the Display case slot it was dropped on (a trophy there swaps with it).
+function UI.Display(uid, index)
+	local trophy, err = ns.Forge.Display(uid, index)
 	if trophy then
 		ns.PlaySound("UI_70_ARTIFACT_FORGE_RELIC_PLACE")
 		setStatus(string.format(L.STATUS_DISPLAYED, ns.Colorize(string.format("%s +%d", trophy.name, trophy.level), trophy.quality)), 1, 1, 1)
@@ -161,11 +162,35 @@ function UI.Display(uid)
 	return UI.Act(trophy, err)
 end
 
-function UI.UseConsumable(id)
-	local safe, err = ns.Economy.UseConsumable(id)
+-- Takes a trophy out of the Display case onto the anvil ("anvil") or a Workbench slot.
+function UI.TakeTrophy(index, target)
+	local piece, err = ns.Forge.TakeTrophy(index, target)
+	if piece then
+		ns.PlaySound("UI_70_ARTIFACT_FORGE_RELIC_PLACE")
+		setStatus(string.format(L.STATUS_TROPHY_BACK, ns.PieceTitle(piece)), 1, 1, 1)
+	end
+	return UI.Act(piece, err)
+end
+
+-- The slot that shows a piece, for effects.
+local function slotOf(uid)
+	local _, where, slot = ns.Forge.Find(uid)
+	if where == "anvil" then
+		return anvil.slot
+	elseif where == "bench" then
+		return benchSlots[slot]
+	end
+end
+
+-- Uses a sharpening stone on a piece (by uid; the anvil piece if none is given).
+function UI.UseConsumable(id, uid)
+	local safe, err = ns.Economy.UseConsumable(id, uid)
 	if safe then
 		ns.PlaySound("UI_70_ARTIFACT_FORGE_TRAIT_FIRST_TRAIT")
-		W.Glow(anvil.slot, 1, 0.82, 0)
+		local slot = uid and slotOf(uid) or anvil.slot
+		if slot then
+			W.Glow(slot, 1, 0.82, 0)
+		end
 		setStatus(string.format(L.STATUS_STONE_USED, ns.ConsumableName(id), safe), 1, 0.82, 0)
 	end
 	return UI.Act(safe, err)
@@ -305,16 +330,19 @@ local function buildAnvil(parent)
 	slot:SetScript("OnDragStop", function()
 		Drag.Stop()
 	end)
+	-- The anvil takes any item (from the Workbench, an order card or the Display case) and sharpening stones.
 	Drag.Register({
 		frame = slot,
 		accept = function(p)
-			return (p.kind == "piece" and p.from == "bench") or p.kind == "consumable"
+			return (p.kind == "piece" and p.from ~= "anvil") or p.kind == "trophy" or (p.kind == "consumable" and ns.db.anvil ~= nil)
 		end,
 		drop = function(p)
 			if p.kind == "consumable" then
 				UI.UseConsumable(p.id)
+			elseif p.kind == "trophy" then
+				UI.TakeTrophy(p.index, "anvil")
 			else
-				UI.Act(ns.Forge.PutOnAnvil(p.slot))
+				UI.Act(ns.Forge.Move(p.uid, "anvil"))
 			end
 		end,
 	})
@@ -409,16 +437,22 @@ local function buildStorage(parent)
 				Drag.Start({ kind = "piece", uid = piece.uid, from = "bench", slot = i, icon = piece.icon }, self)
 			end
 		end)
+		-- Any item can be dropped here (an item already here swaps places with it); a stone sharpens this item.
 		Drag.Register({
 			frame = slot,
 			accept = function(p)
-				return p.kind == "piece" and (p.from == "anvil" or (p.from == "bench" and p.slot ~= i))
+				if p.kind == "piece" then
+					return not (p.from == "bench" and p.slot == i)
+				end
+				return p.kind == "trophy" or (p.kind == "consumable" and ns.db.workbench[i] ~= nil)
 			end,
 			drop = function(p)
-				if p.from == "anvil" then
-					UI.Act(ns.Forge.Park(i))
+				if p.kind == "trophy" then
+					UI.TakeTrophy(p.index, i)
+				elseif p.kind == "consumable" then
+					UI.UseConsumable(p.id, ns.db.workbench[i].uid)
 				else
-					UI.Act(ns.Forge.SwapBench(p.slot, i))
+					UI.Act(ns.Forge.Move(p.uid, i))
 				end
 			end,
 		})
@@ -490,6 +524,16 @@ local function buildStorage(parent)
 				Drag.Start({ kind = "consumable", id = id, icon = Data.CONSUMABLES[id].icon }, self)
 			end
 		end)
+		-- An item dropped on a stone is sharpened with it.
+		Drag.Register({
+			frame = slot,
+			accept = function(p)
+				return p.kind == "piece"
+			end,
+			drop = function(p)
+				UI.UseConsumable(id, p.uid)
+			end,
+		})
 	end
 
 	-- A tool from a lockbox that has no free shelf slot waits here.
@@ -516,6 +560,16 @@ local function buildStorage(parent)
 	pendingSlot:SetScript("OnDragStop", function()
 		Drag.Stop()
 	end)
+	-- A shelf tool dropped on the new tool swaps places with it.
+	Drag.Register({
+		frame = pendingSlot,
+		accept = function(p)
+			return p.kind == "tool" and ns.db.pendingTool ~= nil
+		end,
+		drop = function(p)
+			UI.Act(ns.Economy.SwapPendingTool(p.slot))
+		end,
+	})
 	pendingText = W.Label(inset, "GameFontHighlightSmall", L.PENDING_TOOL_HINT)
 	pendingText:SetPoint("TOPLEFT", pendingSlot, "TOPRIGHT", 8, 0)
 	pendingText:SetWidth(140)
@@ -538,9 +592,24 @@ local function buildStorage(parent)
 		end)
 		slot:SetScript("OnClick", function(self, button)
 			local trophy = ns.db.display[i]
-			if button == "RightButton" and trophy then
+			if button == "RightButton" and trophy and not Drag.ClickAfterDrag(self) then
 				local title = ns.Colorize(string.format("%s +%d", trophy.name, trophy.level), trophy.quality)
 				W.Menu(self, title, {
+					{ L.MENU_TO_ANVIL, function()
+						if ns.db.display[i] == trophy then
+							UI.TakeTrophy(i, "anvil")
+						end
+					end },
+					{ L.MENU_TO_BENCH, function()
+						if ns.db.display[i] == trophy then
+							local free = ns.Forge.FreeBenchSlot()
+							if free then
+								UI.TakeTrophy(i, free)
+							else
+								ns.Error("ERR_BENCH_FULL")
+							end
+						end
+					end },
 					{ L.MENU_REMOVE_TROPHY, function()
 						W.Confirm(string.format(L.CONFIRM_REMOVE_TROPHY, title), function()
 							if ns.db.display[i] == trophy then
@@ -551,13 +620,24 @@ local function buildStorage(parent)
 				})
 			end
 		end)
+		-- Drag a trophy out to the anvil or the Workbench, or onto another trophy to reorder.
+		slot:SetScript("OnDragStart", function(self)
+			local trophy = ns.db.display[i]
+			if trophy then
+				Drag.Start({ kind = "trophy", index = i, icon = trophy.icon }, self)
+			end
+		end)
 		Drag.Register({
 			frame = slot,
 			accept = function(p)
-				return p.kind == "piece"
+				return p.kind == "piece" or (p.kind == "trophy" and p.index ~= i)
 			end,
 			drop = function(p)
-				UI.Display(p.uid)
+				if p.kind == "trophy" then
+					UI.Act(ns.Economy.MoveTrophy(p.index, i))
+				else
+					UI.Display(p.uid, i)
+				end
 			end,
 		})
 	end

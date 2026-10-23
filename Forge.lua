@@ -102,13 +102,45 @@ function Forge.Park(slot)
 	return piece
 end
 
+local function isBenchSlot(slot)
+	return type(slot) == "number" and slot >= 1 and slot <= Data.WORKBENCH_SLOTS and slot == math.floor(slot)
+end
+
 function Forge.SwapBench(a, b)
 	local bench = ns.db.workbench
 	if a == b or not bench[a] then
 		return nil, "ERR_EMPTY_SLOT"
 	end
+	if not isBenchSlot(b) then
+		return nil, "ERR_BAD_SLOT"
+	end
 	bench[a], bench[b] = bench[b], bench[a]
 	return true
+end
+
+-- Moves a piece, wherever it is, to the anvil (target "anvil") or a Workbench slot. Whatever is there takes the
+-- piece's old place. Every drop onto the anvil or the Workbench ends here.
+function Forge.Move(uid, target)
+	local piece, where, slot = Forge.Find(uid)
+	if not piece then
+		return nil, "ERR_NO_ITEM"
+	end
+	if target ~= "anvil" and not isBenchSlot(target) then
+		return nil, "ERR_BAD_SLOT"
+	end
+	if where == "anvil" then
+		if target == "anvil" then
+			return piece
+		end
+		return Forge.Park(target)
+	end
+	if target == "anvil" then
+		return Forge.PutOnAnvil(slot)
+	end
+	if target ~= slot then
+		Forge.SwapBench(slot, target)
+	end
+	return piece
 end
 
 function Forge.DiscardBench(slot)
@@ -214,17 +246,18 @@ function Forge.Sell()
 	return value, piece
 end
 
--- Keeps a piece (from the anvil or the Workbench) as a trophy instead of selling it.
-function Forge.Display(uid)
-	local db = ns.db
-	local piece = Forge.Find(uid)
-	if not piece then
-		return nil, "ERR_NO_ITEM"
+-- What a trophy keeps of its piece, so it can go back to the anvil or the Workbench.
+local PIECE_FIELDS = {
+	"itemID", "name", "link", "icon", "startQuality", "level", "itemLevel", "kind", "equipLoc", "armorType",
+	"embers", "frenzy", "safe", "swings", "afterMiss", "sulfuronUsed",
+}
+
+function Forge.MakeTrophy(piece)
+	local copy = {}
+	for _, key in ipairs(PIECE_FIELDS) do
+		copy[key] = piece[key]
 	end
-	if #db.display >= ns.Economy.DisplaySlots() then
-		return nil, "ERR_CASE_FULL"
-	end
-	local trophy = {
+	return {
 		itemID = piece.itemID,
 		name = piece.name,
 		link = piece.link,
@@ -235,8 +268,93 @@ function Forge.Display(uid)
 		itemLevel = piece.itemLevel,
 		value = Forge.Value(piece),
 		date = GetServerTime(),
+		piece = copy,
 	}
+end
+
+-- Turns a trophy back into a piece with a new uid. Trophies from version 1.0 kept only what the Display case
+-- shows, so their kind and slot come from the item.
+function Forge.PieceFromTrophy(trophy)
+	local piece = {}
+	if type(trophy.piece) == "table" then
+		for _, key in ipairs(PIECE_FIELDS) do
+			piece[key] = trophy.piece[key]
+		end
+	else
+		piece.itemID, piece.name, piece.link, piece.icon = trophy.itemID, trophy.name, trophy.link, trophy.icon
+		piece.startQuality, piece.level, piece.itemLevel = trophy.startQuality, trophy.level, trophy.itemLevel
+		local _, _, _, equipLoc, _, classID, subclassID = C_Item.GetItemInfoInstant(trophy.itemID)
+		piece.kind = classID == Data.CLASS_WEAPON and "weapon" or "armor"
+		piece.equipLoc = equipLoc or ""
+		piece.armorType = classID == Data.CLASS_ARMOR and subclassID or nil
+	end
+	piece.uid = ns.DB.NewUID()
+	return ns.DB.CleanPiece(piece)
+end
+
+-- Keeps a piece (from the anvil or the Workbench) as a trophy instead of selling it. Dropped on a trophy
+-- (index), the two swap: the trophy goes back where the piece was. Returns the trophy and the piece that came back.
+function Forge.Display(uid, index)
+	local db = ns.db
+	local piece, where, slot = Forge.Find(uid)
+	if not piece then
+		return nil, "ERR_NO_ITEM"
+	end
+	local old = index and db.display[index]
+	if old then
+		local back = Forge.PieceFromTrophy(old)
+		if not back then
+			return nil, "ERR_UNKNOWN"
+		end
+		db.display[index] = Forge.MakeTrophy(piece)
+		if where == "anvil" then
+			db.anvil = back
+			arrive(back)
+		else
+			db.workbench[slot] = back
+		end
+		return db.display[index], back
+	end
+	if #db.display >= ns.Economy.DisplaySlots() then
+		return nil, "ERR_CASE_FULL"
+	end
+	local trophy = Forge.MakeTrophy(piece)
 	Forge.Take(uid)
 	table.insert(db.display, trophy)
 	return trophy
+end
+
+-- Takes a trophy out of the Display case onto the anvil (target "anvil") or a Workbench slot. A piece already
+-- there takes the trophy's place in the case.
+function Forge.TakeTrophy(index, target)
+	local db = ns.db
+	local trophy = db.display[index]
+	if not trophy then
+		return nil, "ERR_BAD_SLOT"
+	end
+	if target ~= "anvil" and not isBenchSlot(target) then
+		return nil, "ERR_BAD_SLOT"
+	end
+	local piece = Forge.PieceFromTrophy(trophy)
+	if not piece then
+		return nil, "ERR_UNKNOWN"
+	end
+	local occupant
+	if target == "anvil" then
+		occupant = db.anvil
+	else
+		occupant = db.workbench[target]
+	end
+	if occupant then
+		db.display[index] = Forge.MakeTrophy(occupant)
+	else
+		table.remove(db.display, index)
+	end
+	if target == "anvil" then
+		db.anvil = piece
+		arrive(piece)
+	else
+		db.workbench[target] = piece
+	end
+	return piece
 end

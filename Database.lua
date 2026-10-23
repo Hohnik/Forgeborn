@@ -112,6 +112,9 @@ local function cleanTrophy(t)
 	if type(t.name) ~= "string" then
 		t.name = "?"
 	end
+	if type(t.piece) ~= "table" then
+		t.piece = nil -- trophies from 1.0 have none; Forge.PieceFromTrophy rebuilds it from the item
+	end
 	return t
 end
 

@@ -128,11 +128,27 @@ local function buildCard(parent, index)
 		end
 	end)
 	slot:SetScript("OnLeave", tooltipHide)
-	slot:SetScript("OnClick", function(_, button)
-		if button == "RightButton" and card.order then
+	slot:SetScript("OnClick", function(self, button)
+		if button == "RightButton" and card.order and not Drag.ClickAfterDrag(self) then
 			UI.staged[card.order.id] = nil
 			ns.Changed()
 		end
+	end)
+	-- Drag the staged item out: onto another card, the anvil, the Workbench or the Display case, or anywhere
+	-- else to take it off the card.
+	slot:SetScript("OnDragStart", function(self)
+		local piece = stagedPiece(card.order)
+		if piece then
+			Drag.Start({ kind = "piece", uid = piece.uid, from = "order", order = card.order.id, icon = piece.icon }, self)
+		end
+	end)
+	slot:SetScript("OnDragStop", function()
+		local payload = Drag.payload
+		if payload and payload.order then
+			UI.staged[payload.order] = nil
+		end
+		Drag.Stop()
+		ns.Changed()
 	end)
 	Drag.Register({
 		frame = slot,
