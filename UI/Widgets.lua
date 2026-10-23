@@ -31,6 +31,37 @@ function W.SetSlot(button, icon, quality, count, desaturated)
 	SetItemButtonDesaturated(button, desaturated and true or false)
 end
 
+---------------------------------------------------------------------------
+-- Layout: positions come from ns.Layout (UI/Layout.lua), in pixels from the parent's top-left corner.
+---------------------------------------------------------------------------
+
+W.SLOT_SIZE = 37 -- an ItemButton
+
+-- A box, button or bar: { x, y, width, height }.
+function W.Place(region, box)
+	region:ClearAllPoints()
+	region:SetPoint("TOPLEFT", box[1], -box[2])
+	if box[3] and box[4] then
+		region:SetSize(box[3], box[4])
+	end
+end
+
+-- A text: { x, y, width }. Its height follows the font (and the lines, where it wraps).
+function W.PlaceText(label, box, justify)
+	label:ClearAllPoints()
+	label:SetPoint("TOPLEFT", box[1], -box[2])
+	label:SetWidth(box[3])
+	label:SetJustifyH(justify or "LEFT")
+end
+
+-- An item slot: { x, y, size }. Other sizes than 37 scale the slot, so positions are divided by the scale.
+function W.PlaceSlot(button, box)
+	local scale = (box[3] or W.SLOT_SIZE) / W.SLOT_SIZE
+	button:SetScale(scale)
+	button:ClearAllPoints()
+	button:SetPoint("TOPLEFT", box[1] / scale, -box[2] / scale)
+end
+
 -- A small text label.
 function W.Label(parent, font, text)
 	local label = parent:CreateFontString(nil, "ARTWORK", font or "GameFontNormal")

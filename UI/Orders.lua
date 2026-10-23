@@ -2,11 +2,17 @@
 -- The window gives no hints about which item fits; Send checks it.
 local _, ns = ...
 
-local L, Data, W = ns.L, ns.Data, ns.Widgets
+local L, Data, W, Layout = ns.L, ns.Data, ns.Widgets, ns.Layout
 local Drag = W.Drag
 local UI = ns.UI
 
-local CARD_WIDTH, CARD_HEIGHT, CARD_GAP = 334, 86, 4
+-- The cards: { x, y, width, height, gap } in the orders box (UI/Layout.lua).
+local CARDS_X, CARDS_Y, CARD_WIDTH, CARD_HEIGHT, CARD_GAP = unpack(Layout.cards)
+
+local function placeCard(card, index)
+	card:ClearAllPoints()
+	card:SetPoint("TOPLEFT", CARDS_X, -CARDS_Y - (index - 1) * (CARD_HEIGHT + CARD_GAP))
+end
 local MAX_DAILY_CARDS = Data.DAILY_SLOTS + Data.DAILY_SLOTS_BONUS
 local cards = {}
 local waitingText
@@ -90,31 +96,25 @@ end
 local function buildCard(parent, index)
 	local card = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
 	card:SetSize(CARD_WIDTH, CARD_HEIGHT)
-	card:SetPoint("TOPLEFT", 10, -32 - (index - 1) * (CARD_HEIGHT + CARD_GAP))
+	placeCard(card, index)
 
 	card.header = W.Label(card, "GameFontNormalSmall")
-	card.header:SetPoint("TOPLEFT", 10, -8)
+	W.PlaceText(card.header, Layout.cardHeader)
 	card.ask = W.Label(card, "GameFontHighlight")
-	card.ask:SetPoint("TOPLEFT", 10, -24)
-	card.ask:SetWidth(260)
-	card.ask:SetJustifyH("LEFT")
+	W.PlaceText(card.ask, Layout.cardAsk)
 	card.ask:SetWordWrap(false)
 	card.range = W.Label(card, "GameFontHighlightSmall")
-	card.range:SetPoint("TOPLEFT", 10, -42)
-	-- Left of the Send button, which starts 172 px in.
+	W.PlaceText(card.range, Layout.cardRange)
 	card.reward = W.Label(card, "GameFontHighlightSmall")
-	card.reward:SetPoint("TOPLEFT", 10, -58)
-	card.reward:SetWidth(156)
-	card.reward:SetJustifyH("LEFT")
+	W.PlaceText(card.reward, Layout.cardReward)
 	card.reward:SetWordWrap(true)
 
 	card.empty = W.Label(card, "GameFontDisable")
-	card.empty:SetPoint("CENTER")
-	card.empty:SetWidth(CARD_WIDTH - 24)
+	W.PlaceText(card.empty, Layout.cardEmpty, "CENTER")
 	card.empty:SetWordWrap(true)
 
 	local slot = W.CreateSlot(card)
-	slot:SetPoint("TOPRIGHT", -10, -8)
+	W.PlaceSlot(slot, Layout.cardSlot)
 	card.slot = slot
 	slot:SetScript("OnEnter", function(self)
 		local piece = stagedPiece(card.order)
@@ -161,13 +161,13 @@ local function buildCard(parent, index)
 		end,
 	})
 
-	card.send = W.Button(card, L.SEND, 74, 22)
-	card.send:SetPoint("BOTTOMRIGHT", -88, 8)
+	card.send = W.Button(card, L.SEND, Layout.cardSend[3], Layout.cardSend[4])
+	W.Place(card.send, Layout.cardSend)
 	card.send:SetScript("OnClick", function()
 		send(card)
 	end)
-	card.reject = W.Button(card, L.REJECT, 74, 22)
-	card.reject:SetPoint("BOTTOMRIGHT", -10, 8)
+	card.reject = W.Button(card, L.REJECT, Layout.cardReject[3], Layout.cardReject[4])
+	W.Place(card.reject, Layout.cardReject)
 	card.reject:SetScript("OnClick", function()
 		reject(card)
 	end)
@@ -176,11 +176,10 @@ end
 
 function UI.BuildOrders(parent)
 	local inset = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-	inset:SetPoint("TOPLEFT", 418, -60)
-	inset:SetSize(354, 488)
-	W.Label(inset, "GameFontNormal", L.ORDERS):SetPoint("TOPLEFT", 12, -10)
+	W.Place(inset, Layout.orders)
+	W.PlaceText(W.Label(inset, "GameFontNormal", L.ORDERS), Layout.ordersTitle)
 	waitingText = W.Label(inset, "GameFontHighlightSmall")
-	waitingText:SetPoint("TOPRIGHT", -12, -12)
+	W.PlaceText(waitingText, Layout.waiting, "RIGHT")
 	for i = 1, MAX_DAILY_CARDS + 1 do
 		cards[i] = buildCard(inset, i)
 	end
@@ -249,8 +248,7 @@ function UI.UpdateOrders()
 	local index = 1
 	for i = 1, dailyCards do
 		local card = cards[index]
-		card:ClearAllPoints()
-		card:SetPoint("TOPLEFT", 10, -32 - (index - 1) * (CARD_HEIGHT + CARD_GAP))
+		placeCard(card, index)
 		card:Show()
 		fillCard(card, orders.daily[i], L.DAILY)
 		if not orders.daily[i] then
@@ -259,8 +257,7 @@ function UI.UpdateOrders()
 		index = index + 1
 	end
 	local weeklyCard = cards[index]
-	weeklyCard:ClearAllPoints()
-	weeklyCard:SetPoint("TOPLEFT", 10, -32 - (index - 1) * (CARD_HEIGHT + CARD_GAP))
+	placeCard(weeklyCard, index)
 	weeklyCard:Show()
 	fillCard(weeklyCard, orders.weekly, L.WEEKLY)
 	if not orders.weekly then

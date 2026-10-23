@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<!-- page:start (everything from here to page:end is the page; the lines around it only make it a full document) -->
+<title>Forgeborn Window Layout</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Marcellus&display=swap">
+<style>
+/* Layout: a workbench. The game window sits on a dark stage at true pixel size; the tool panel runs beside it
+   (below it on a phone). The game window keeps the in-game look in both themes; the tool around it follows the theme. */
+:root {
+	--bg: #e9ecee;
+	--panel: #ffffff;
+	--ink: #1c2126;
+	--muted: #5b646d;
+	--line: #d2d8dd;
+	--accent: #a8481a;
+	--accent-ink: #ffffff;
+	--select: #0a84c6;
+	--stage: #2b2f33;
+	--warn: #b3261e;
+	--field: #f5f7f8;
+	--font-ui: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+	--font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+	--font-wow: "Marcellus", "Palatino Linotype", Georgia, serif;
+	/* the game window: one look, as in game */
+	--wow-frame: #1d1914;
+	--wow-edge: #6b5631;
+	--wow-inset: #0d0b09;
+	--wow-gold: #ffd100;
+	--wow-white: #ffffff;
+	--wow-gray: #8a8a8a;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #111417; --panel: #191d21; --ink: #e5e8eb; --muted: #9aa4ad; --line: #2d333a;
+		--accent: #e2793f; --accent-ink: #1a0c04; --select: #39b4f5; --stage: #0b0d0f; --warn: #ff8a80; --field: #20252a;
+		color-scheme: dark;
+	}
+}
+:root[data-theme="dark"] {
+	--bg: #111417; --panel: #191d21; --ink: #e5e8eb; --muted: #9aa4ad; --line: #2d333a;
+	--accent: #e2793f; --accent-ink: #1a0c04; --select: #39b4f5; --stage: #0b0d0f; --warn: #ff8a80; --field: #20252a;
+	color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--font-ui);
+	font-size: 14px;
+	line-height: 1.45;
+}
+.page {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-height: 100%;
+	padding-block: 12px 16px;
+	padding-left: max(16px, env(safe-area-inset-left, 0px));
+	padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px 18px;
+}
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand h1 { font-family: var(--font-wow); font-weight: 400; font-size: 22px; margin: 0; letter-spacing: 0.01em; }
+.brand span { color: var(--muted); font-size: 13px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--ink); padding: 5px 9px; font: 500 12px var(--font-ui); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.seg-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-right: 2px; }
+.btn {
+	border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px;
+	padding: 5px 10px; font: 500 12px var(--font-ui); cursor: pointer;
+}
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--warn); }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
+
+.work { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; flex: 1; min-height: 0; }
+@media (max-width: 980px) { .work { grid-template-columns: minmax(0, 1fr); } }
+
+.stage-wrap {
+	background: var(--stage);
+	border-radius: 10px;
+	overflow: auto;
+	min-height: 300px;
+	position: relative;
+	touch-action: none;
+}
+.stage { position: relative; padding: 28px; }
+.help {
+	position: sticky; left: 0; bottom: 0; display: block; padding: 8px 12px; font-size: 12px; color: #b9c0c6;
+	background: linear-gradient(transparent, rgba(0,0,0,0.55));
+}
+.help kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid #555d64; border-radius: 3px; padding: 0 4px; color: #e4e7ea; }
+
+.panel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card {
+	background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+	display: flex; flex-direction: column; gap: 10px; min-width: 0;
+}
+.card h2 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.sel-name { font-family: var(--font-wow); font-size: 19px; line-height: 1.2; }
+.sel-meta { font-size: 12px; color: var(--muted); }
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
+.fields label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.fields input {
+	width: 100%; font: 500 14px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink);
+	background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px;
+}
+.empty-note { font-size: 13px; color: var(--muted); }
+.warn-line { font-size: 12px; color: var(--warn); }
+
+.tree { display: flex; flex-direction: column; gap: 10px; max-height: 360px; overflow: auto; }
+.tree h3 { margin: 0 0 2px; font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.tree ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.tree li button {
+	width: 100%; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 6px; align-items: center; text-align: left;
+	border: 0; background: transparent; color: var(--ink); padding: 3px 6px; border-radius: 5px; cursor: pointer; font: 13px var(--font-ui);
+}
+.tree li button:hover { background: var(--field); }
+.tree li button[aria-current="true"] { background: var(--select); color: #fff; }
+.tree li button[aria-current="true"] .xy { color: #e7f5fd; }
+.tree .dot { width: 7px; height: 7px; border-radius: 50%; background: transparent; }
+.tree .dot.on { background: var(--accent); }
+.tree .xy { font: 11px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.chip { display: inline-block; white-space: nowrap; font: 600 11px var(--font-ui); padding: 1px 7px; border-radius: 99px; background: var(--field); color: var(--muted); border: 1px solid var(--line); }
+.chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+textarea {
+	width: 100%; min-height: 150px; resize: vertical; font: 12px/1.45 var(--font-mono); color: var(--ink);
+	background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 8px; white-space: pre; overflow: auto;
+}
+.status { font-size: 12px; color: var(--muted); min-height: 1.2em; }
+.steps { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+.steps code, .card p code { font: 12px var(--font-mono); color: var(--ink); }
+.card p { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* ---------------- the game window ---------------- */
+.wow {
+	position: relative; transform-origin: 0 0; font-family: var(--font-wow); color: var(--wow-white);
+	-webkit-user-select: none; user-select: none;
+}
+.wow .frame {
+	position: absolute; inset: 0; border-radius: 6px;
+	background:
+		radial-gradient(120% 80% at 50% 0%, rgba(255,214,140,0.06), transparent 60%),
+		repeating-linear-gradient(115deg, rgba(255,255,255,0.012) 0 3px, transparent 3px 7px),
+		var(--wow-frame);
+	box-shadow: 0 0 0 2px #0a0806, 0 0 0 4px var(--wow-edge), 0 0 0 5px #120f0b, 0 18px 40px rgba(0,0,0,0.55);
+}
+.wow .titlebar {
+	position: absolute; left: 60px; right: 30px; top: 3px; height: 20px; text-align: center; font-size: 13px; color: var(--wow-gold);
+	border-bottom: 1px solid rgba(107,86,49,0.6); pointer-events: none;
+}
+.wow .portrait {
+	position: absolute; left: -8px; top: -8px; width: 62px; height: 62px; border-radius: 50%; pointer-events: none;
+	background: radial-gradient(circle at 40% 35%, #8a8f96, #3f4348 55%, #1b1d20);
+	box-shadow: 0 0 0 3px #0a0806, 0 0 0 5px var(--wow-edge);
+}
+.wow .portrait::after { content: ""; position: absolute; inset: 16px 14px 18px; border-radius: 4px 4px 10px 10px; background: linear-gradient(#c7cbd0, #6d7278); clip-path: polygon(0 30%, 100% 30%, 100% 55%, 70% 55%, 62% 100%, 38% 100%, 30% 55%, 0 55%); }
+.wow .closex {
+	position: absolute; right: 4px; top: 3px; width: 20px; height: 20px; border-radius: 4px; pointer-events: none;
+	background: linear-gradient(#a8180f, #5c0b06); box-shadow: inset 0 0 0 1px #2a0503; color: #ffd8b0; font: 13px/20px var(--font-ui); text-align: center;
+}
+.el { position: absolute; }
+.el.box, .card-box {
+	background: var(--wow-inset);
+	box-shadow: inset 0 0 0 1px #000, inset 0 0 0 2px #3a3022, inset 0 2px 8px rgba(0,0,0,0.8);
+	border-radius: 2px;
+}
+.el.text { text-shadow: 1px 1px 0 #000; }
+.el.text .t { display: block; white-space: normal; pointer-events: none; }
+.el.text.nowrap .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.f-normal { font-size: 12.5px; line-height: 15px; color: var(--wow-gold); }
+.f-normalSmall { font-size: 10.5px; line-height: 13px; color: var(--wow-gold); }
+.f-normalLarge { font-size: 16.5px; line-height: 19px; color: var(--wow-gold); }
+.f-highlight { font-size: 12.5px; line-height: 15px; color: var(--wow-white); }
+.f-highlightSmall { font-size: 10.5px; line-height: 13px; color: var(--wow-white); }
+.f-disable { font-size: 12.5px; line-height: 15px; color: var(--wow-gray); }
+.f-disableSmall { font-size: 10.5px; line-height: 13px; color: var(--wow-gray); }
+.c-w { color: var(--wow-white); } .c-g { color: var(--wow-gold); } .c-q2 { color: #1eff00; } .c-q3 { color: #0070dd; } .c-q4 { color: #a335ee; } .c-red { color: #ff6f5a; }
+.el.button {
+	display: flex; align-items: center; justify-content: center; color: var(--wow-gold); font-size: 12.5px; text-shadow: 1px 1px 0 #000;
+	background: linear-gradient(#9d1c12, #651009 55%, #4a0a05); border-radius: 4px;
+	box-shadow: inset 0 0 0 1px #200301, inset 0 1px 0 rgba(255,190,140,0.35), 0 0 0 1px #6b5631;
+}
+.el.button.big { font-size: 15px; background: linear-gradient(#c22a17, #7c140a 55%, #560c06); }
+.el.bar { background: rgba(0,0,0,0.5); }
+.bar-seg { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font: 10.5px var(--font-wow); color: #fff; text-shadow: 1px 1px 0 #000; pointer-events: none; }
+.bar-label { position: absolute; top: calc(100% + 3px); font: 10.5px var(--font-wow); color: var(--wow-gray); white-space: nowrap; pointer-events: none; }
+.pip { position: absolute; top: 0; border-radius: 50%; background: rgba(0,0,0,0.6); pointer-events: none; }
+.pip i { position: absolute; inset: 17%; border-radius: 50%; background: #404040; }
+.pip.on i { background: #ff661a; }
+.el.slot, .slotbox {
+	width: 37px; height: 37px; border-radius: 3px; background: #15120f;
+	box-shadow: inset 0 0 0 1px #000, inset 0 0 0 2px #34302a, inset 0 0 10px rgba(0,0,0,0.9);
+}
+.slotbox { position: absolute; top: 0; pointer-events: none; }
+.icon { position: absolute; inset: 2px; border-radius: 2px; pointer-events: none; }
+.q0 .icon { box-shadow: inset 0 0 0 1.5px #9d9d9d; }
+.q1 .icon { box-shadow: inset 0 0 0 1.5px #e8e8e8; }
+.q2 .icon { box-shadow: inset 0 0 0 1.5px #1eff00; }
+.q3 .icon { box-shadow: inset 0 0 0 1.5px #0070dd; }
+.q4 .icon { box-shadow: inset 0 0 0 1.5px #a335ee; }
+.q5 .icon { box-shadow: inset 0 0 0 1.5px #ff8000; }
+.count { position: absolute; right: 3px; bottom: 1px; font: 11px var(--font-ui); color: #fff; text-shadow: 1px 1px 0 #000; pointer-events: none; }
+.i-boot { background: radial-gradient(circle at 60% 70%, #8b6b45, #3b2a19 60%, #1b130b); }
+.i-sword { background: linear-gradient(135deg, transparent 42%, #c9d0d6 43%, #8e979f 52%, transparent 53%), radial-gradient(circle at 50% 50%, #3d4a57, #151a1f); }
+.i-helm { background: radial-gradient(circle at 50% 40%, #9fb6cf, #3c5978 55%, #13202e); }
+.i-chest { background: radial-gradient(circle at 50% 45%, #6e8f4a, #2f4320 60%, #111a0b); }
+.i-hammer { background: linear-gradient(45deg, transparent 45%, #7a5a37 46%, #7a5a37 54%, transparent 55%), radial-gradient(circle at 35% 35%, #b9bec4, #4a4f55 50%, #1b1d20); }
+.i-flux { background: radial-gradient(circle at 50% 60%, #d9d2b8, #6f6650 55%, #221f17); }
+.i-core { background: radial-gradient(circle at 50% 50%, #ffe08a, #ff7a1a 35%, #7a1a05 70%, #200602); }
+.i-stone { background: radial-gradient(circle at 45% 45%, #b8b2a5, #57534b 55%, #1d1b18); }
+.i-gem { background: radial-gradient(circle at 50% 45%, #f2c6ff, #9b3fd0 45%, #2a0a3c); }
+.i-orb { background: radial-gradient(circle at 45% 40%, #ffffff, #c9e6ff 25%, #3a6fa0 60%, #0d1c2b); }
+
+/* editing overlays */
+.wow.outlines .el { outline: 1px dashed rgba(120, 200, 255, 0.35); outline-offset: 0; }
+.el.sel { outline: 2px solid var(--select) !important; outline-offset: 1px; z-index: 5; }
+.el.overflow { outline: 2px solid #ff5a4f !important; }
+.handle { position: absolute; width: 11px; height: 11px; right: -7px; bottom: -7px; background: var(--select); border: 2px solid #fff; border-radius: 2px; cursor: nwse-resize; z-index: 6; touch-action: none; }
+.handle.ew { top: calc(50% - 6px); bottom: auto; cursor: ew-resize; }
+.el, .wow { cursor: default; }
+.el:not(.window) { cursor: move; }
+.readout {
+	position: absolute; z-index: 7; pointer-events: none; font: 11px var(--font-mono); color: #fff; background: rgba(10,132,198,0.92);
+	padding: 1px 5px; border-radius: 3px; white-space: nowrap; transform: translateY(-100%); margin-top: -4px;
+}
+@media (prefers-reduced-motion: no-preference) { .tree li button, .btn, .seg button { transition: background-color 120ms ease; } }
+</style>
+
+<div class="page">
+	<header class="top">
+		<div class="brand"><h1>Forgeborn window layout</h1><span id="changes" class="chip">no changes</span></div>
+		<div class="controls">
+			<span class="seg-label">Zoom</span>
+			<div class="seg" role="group" aria-label="Zoom" id="zoom">
+				<button type="button" data-zoom="fit">Fit</button><button type="button" data-zoom="1">100%</button><button type="button" data-zoom="1.5">150%</button><button type="button" data-zoom="2">200%</button>
+			</div>
+			<span class="seg-label">Snap</span>
+			<div class="seg" role="group" aria-label="Snap to" id="snap">
+				<button type="button" data-snap="1">1</button><button type="button" data-snap="2">2</button><button type="button" data-snap="4">4</button><button type="button" data-snap="8">8</button>
+			</div>
+			<span class="seg-label">Text</span>
+			<div class="seg" role="group" aria-label="Sample text language" id="lang">
+				<button type="button" data-lang="en">English</button><button type="button" data-lang="de">Deutsch</button>
+			</div>
+			<span class="seg-label">Order cards</span>
+			<div class="seg" role="group" aria-label="Order cards shown" id="cardcount">
+				<button type="button" data-cards="4">4</button><button type="button" data-cards="5">5</button>
+			</div>
+			<button type="button" class="btn" id="outlines" aria-pressed="false">Outlines</button>
+			<button type="button" class="btn" id="undo" title="Undo (Ctrl+Z)">Undo</button>
+			<button type="button" class="btn" id="redo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+		</div>
+	</header>
+
+	<div class="work">
+		<section class="stage-wrap" id="stageWrap" aria-label="The Forgeborn window">
+			<div class="stage" id="stage"><div class="wow" id="wow"></div></div>
+			<span class="help">Drag to move · drag the blue corner to resize · <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> nudge 1 px, with <kbd>Shift</kbd> 10 px · <kbd>Esc</kbd> deselects</span>
+		</section>
+
+		<aside class="panel">
+			<section class="card" aria-labelledby="inspector-title">
+				<h2 id="inspector-title">Selected</h2>
+				<div id="inspector"></div>
+			</section>
+
+			<section class="card" aria-labelledby="tree-title">
+				<h2 id="tree-title">Everything in the window</h2>
+				<div class="tree" id="tree"></div>
+			</section>
+
+			<section class="card" aria-labelledby="export-title">
+				<h2 id="export-title">Use it in the addon</h2>
+				<ol class="steps">
+					<li>Press <strong>Copy Lua</strong>.</li>
+					<li>Paste it over <code>UI/Layout.lua</code> in the <code>Forgeborn</code> addon folder.</li>
+					<li>In game, type <code>/reload</code>.</li>
+				</ol>
+				<div class="row">
+					<button type="button" class="btn primary" id="copy">Copy Lua</button>
+					<button type="button" class="btn" id="showLoad">Load Lua…</button>
+					<button type="button" class="btn danger" id="reset">Reset</button>
+				</div>
+				<div class="status" id="status" role="status"></div>
+				<div id="loadBox" hidden>
+					<p>Paste a <code>UI/Layout.lua</code> here to keep editing it.</p>
+					<textarea id="luaIn" spellcheck="false" aria-label="Lua to load"></textarea>
+					<div class="row"><button type="button" class="btn primary" id="load">Load</button><button type="button" class="btn" id="cancelLoad">Cancel</button></div>
+				</div>
+				<textarea id="luaOut" readonly spellcheck="false" aria-label="UI/Layout.lua"></textarea>
+			</section>
+		</aside>
+	</div>
+</div>
+
+<!-- The addon's UI/Layout.lua, used as the starting layout. tools/layout-editor/sync.py keeps it up to date. -->
+<script type="text/plain" id="layout-lua">
+-- layout:start
+-- Forgeborn: where everything in the main window sits.
+--
+-- Change the numbers by hand, or visually: open tools/layout-editor/index.html in a browser, drag and resize
+-- things, press "Copy Lua" and paste the result over this file.
+--
+-- Positions are pixels from the top-left corner of the box a thing sits in; y counts down.
+--   box, button, bar  { x, y, width, height }
+--   text              { x, y, width }      one line, or more where it wraps; its height follows the font
+--   slot              { x, y, size }       an item slot is 37 px; other sizes scale it
+--   row               { x, y, step }       a row of item slots: the first slot, then one every "step" px
+--   cards             { x, y, width, height, gap }
+local _, ns = ...
+
+ns.Layout = {
+	window = { 780, 590 }, -- width, height
+
+	-- In the window
+	anvil = { 8, 60, 404, 268 }, -- box: the anvil
+	storage = { 8, 332, 404, 216 }, -- box: Workbench, Shelf, Supplies, Display case
+	orders = { 418, 60, 354, 488 }, -- box: crafting orders
+	gold = { 18, 560, 240 }, -- text: "Addon gold" and the amount
+	shopHint = { 398, 561, 250 }, -- text, right-aligned
+	shop = { 658, 556, 110, 24 }, -- button: Shop
+
+	-- In the anvil box
+	nextSwing = { 12, 10, 180 }, -- text: "Next swing"
+	embers = { 138, 11, 150 }, -- text, right-aligned: "Embers 3/7"
+	pips = { 294, 11, 98, 12 }, -- the 7 ember circles
+	odds = { 12, 32, 380, 22 }, -- bar: odds of the next swing; the outcome labels sit under it
+	anvilSlot = { 177, 84, 50 }, -- slot: the anvil
+	itemName = { 12, 142, 380 }, -- text, centred
+	itemInfo = { 12, 164, 380 }, -- text, centred: quality, item level, levels to the next quality
+	itemValue = { 12, 180, 380 }, -- text, centred: value and value after a Hit
+	status = { 10, 200, 384 }, -- text, centred, 2 lines: what the last swing did
+	forge = { 12, 226, 182, 32 }, -- button: Forge
+	sell = { 210, 226, 182, 32 }, -- button: Sell
+
+	-- In the storage box
+	workbenchTitle = { 12, 10, 180 }, -- text
+	workbench = { 14, 30, 44 }, -- row of 4 slots
+	shelfTitle = { 208, 10, 180 }, -- text
+	shelf = { 210, 30, 44 }, -- row of 4 slots
+	suppliesTitle = { 12, 78, 180 }, -- text
+	supplies = { 14, 98, 44 }, -- row of 2 slots: sharpening stones
+	newTool = { 210, 98, 37 }, -- slot: a new tool waiting for a shelf slot
+	newToolText = { 255, 98, 140 }, -- text, 3 lines
+	displayTitle = { 12, 146, 180 }, -- text
+	trophyBonus = { 242, 148, 150 }, -- text, right-aligned
+	display = { 14, 166, 44 }, -- row of 6 slots: the Display case
+
+	-- In the orders box
+	ordersTitle = { 12, 10, 180 }, -- text
+	waiting = { 192, 12, 150 }, -- text, right-aligned: orders waiting
+	cards = { 10, 32, 334, 86, 4 }, -- the order cards, top to bottom
+
+	-- In each order card
+	cardHeader = { 10, 8, 260 }, -- text: faction · daily or weekly
+	cardAsk = { 10, 24, 270 }, -- text: what the order asks for
+	cardRange = { 10, 42, 270 }, -- text: item levels
+	cardReward = { 10, 58, 156 }, -- text, 2 lines: the reward
+	cardSlot = { 287, 8, 37 }, -- slot: drop an item here
+	cardSend = { 172, 56, 74, 22 }, -- button: Send
+	cardReject = { 250, 56, 74, 22 }, -- button: Reject
+	cardEmpty = { 12, 30, 310 }, -- text, centred, 2 lines: shown on an empty card
+}
+-- layout:end
+</script>
+
+<script id="core">
+"use strict";
+// ---------------------------------------------------------------------------
+// What can be laid out. The order and the comments are those of UI/Layout.lua, so "Copy Lua" writes that file.
+// kind: window { w, h } · box, button, bar, pips { x, y, w, h } · text { x, y, w } · slot { x, y, size }
+//       row { x, y, step } · cards { x, y, w, h, gap }
+// ---------------------------------------------------------------------------
+const SLOT = 37;
+const ENTRIES = [
+	{ key: "window", kind: "window", parent: null, name: "Window", comment: "width, height" },
+	{ section: "In the window" },
+	{ key: "anvil", kind: "box", parent: "window", name: "Anvil box", comment: "box: the anvil" },
+	{ key: "storage", kind: "box", parent: "window", name: "Storage box", comment: "box: Workbench, Shelf, Supplies, Display case" },
+	{ key: "orders", kind: "box", parent: "window", name: "Orders box", comment: "box: crafting orders" },
+	{ key: "gold", kind: "text", parent: "window", name: "Addon gold", comment: "text: \"Addon gold\" and the amount", font: "normal",
+		text: { en: "Addon gold: <span class=c-w>12g 40s 18c</span>", de: "Addon-Gold: <span class=c-w>12g 40s 18c</span>" } },
+	{ key: "shopHint", kind: "text", parent: "window", name: "Shop hint", comment: "text, right-aligned", font: "disableSmall", align: "right",
+		text: { en: "Lockboxes, one-use items, reputation", de: "Schließkassetten, Verbrauchsgegenstände, Ruf" } },
+	{ key: "shop", kind: "button", parent: "window", name: "Shop button", comment: "button: Shop", text: { en: "Shop", de: "Laden" } },
+	{ section: "In the anvil box" },
+	{ key: "nextSwing", kind: "text", parent: "anvil", name: "Next swing", comment: "text: \"Next swing\"", font: "normal",
+		text: { en: "Next swing", de: "Nächster Schlag" } },
+	{ key: "embers", kind: "text", parent: "anvil", name: "Embers count", comment: "text, right-aligned: \"Embers 3/7\"", font: "highlightSmall", align: "right",
+		text: { en: "Embers 3/7", de: "Glut 3/7" } },
+	{ key: "pips", kind: "pips", parent: "anvil", name: "Ember circles", comment: "the 7 ember circles" },
+	{ key: "odds", kind: "bar", parent: "anvil", name: "Odds bar", comment: "bar: odds of the next swing; the outcome labels sit under it" },
+	{ key: "anvilSlot", kind: "slot", parent: "anvil", name: "Anvil slot", comment: "slot: the anvil", icon: "i-boot", quality: 3 },
+	{ key: "itemName", kind: "text", parent: "anvil", name: "Item name", comment: "text, centred", font: "normalLarge", align: "center", wrap: false,
+		text: { en: "<span class=c-q3>Tattered Boots +14</span>", de: "<span class=c-q3>Zerschlissene Stiefel +14</span>" } },
+	{ key: "itemInfo", kind: "text", parent: "anvil", name: "Quality and item level", comment: "text, centred: quality, item level, levels to the next quality", font: "highlightSmall", align: "center",
+		text: { en: "Rare · item level 20 · 5 to Epic", de: "Selten · Gegenstandsstufe 20 · noch 5 bis Episch" } },
+	{ key: "itemValue", kind: "text", parent: "anvil", name: "Value", comment: "text, centred: value and value after a Hit", font: "highlight", align: "center",
+		text: { en: "Value: 2g 56s 78c · after a Hit 3g 8s 14c", de: "Wert: 2g 56s 78c · nach Treffer 3g 8s 14c" } },
+	{ key: "status", kind: "text", parent: "anvil", name: "Last swing", comment: "text, centred, 2 lines: what the last swing did", font: "normalSmall", align: "center", lines: 2,
+		text: { en: "<span class=c-q2>Hit: +1  Now <span class=c-q3>Rare</span>!</span>", de: "<span class=c-q2>Treffer: +1  Jetzt <span class=c-q3>Selten</span>!</span>" } },
+	{ key: "forge", kind: "button", parent: "anvil", name: "Forge button", comment: "button: Forge", big: true, text: { en: "Forge", de: "Schmieden" } },
+	{ key: "sell", kind: "button", parent: "anvil", name: "Sell button", comment: "button: Sell", text: { en: "Sell", de: "Verkaufen" } },
+	{ section: "In the storage box" },
+	{ key: "workbenchTitle", kind: "text", parent: "storage", name: "Workbench title", comment: "text", font: "normal", text: { en: "Workbench", de: "Werkbank" } },
+	{ key: "workbench", kind: "row", parent: "storage", name: "Workbench", comment: "row of 4 slots", count: 4,
+		items: [["i-sword", 1], ["i-chest", 2], ["i-helm", 3], null] },
+	{ key: "shelfTitle", kind: "text", parent: "storage", name: "Shelf title", comment: "text", font: "normal", text: { en: "Shelf", de: "Regal" } },
+	{ key: "shelf", kind: "row", parent: "storage", name: "Shelf", comment: "row of 4 slots", count: 4,
+		items: [["i-hammer", 1], ["i-core", 3], ["i-flux", 1], null] },
+	{ key: "suppliesTitle", kind: "text", parent: "storage", name: "Supplies title", comment: "text", font: "normal", text: { en: "Supplies", de: "Vorräte" } },
+	{ key: "supplies", kind: "row", parent: "storage", name: "Supplies", comment: "row of 2 slots: sharpening stones", count: 2,
+		items: [["i-stone", 1, 2], ["i-stone", 1, 0]] },
+	{ key: "newTool", kind: "slot", parent: "storage", name: "New tool", comment: "slot: a new tool waiting for a shelf slot", icon: "i-orb", quality: 4 },
+	{ key: "newToolText", kind: "text", parent: "storage", name: "New tool hint", comment: "text, 3 lines", font: "highlightSmall", lines: 3,
+		text: { en: "New tool! Drag it onto a shelf slot, or right-click it.", de: "Neues Werkzeug! Ziehe es auf einen Regalplatz oder klicke es mit rechts an." } },
+	{ key: "displayTitle", kind: "text", parent: "storage", name: "Display case title", comment: "text", font: "normal", text: { en: "Display case", de: "Vitrine" } },
+	{ key: "trophyBonus", kind: "text", parent: "storage", name: "Trophy bonus", comment: "text, right-aligned", font: "highlightSmall", align: "right",
+		text: { en: "Trophies: +1.25% sale value", de: "Trophäen: +1,25% Verkaufswert" } },
+	{ key: "display", kind: "row", parent: "storage", name: "Display case", comment: "row of 6 slots: the Display case", count: 6,
+		items: [["i-gem", 4], ["i-helm", 3], null, null, null, null] },
+	{ section: "In the orders box" },
+	{ key: "ordersTitle", kind: "text", parent: "orders", name: "Orders title", comment: "text", font: "normal", text: { en: "Crafting orders", de: "Handwerksaufträge" } },
+	{ key: "waiting", kind: "text", parent: "orders", name: "Orders waiting", comment: "text, right-aligned: orders waiting", font: "highlightSmall", align: "right",
+		text: { en: "1 waiting", de: "1 wartend" } },
+	{ key: "cards", kind: "cards", parent: "orders", name: "Order cards", comment: "the order cards, top to bottom" },
+	{ section: "In each order card" },
+	{ key: "cardHeader", kind: "text", parent: "card", name: "Card: faction", comment: "text: faction · daily or weekly", font: "normalSmall", sample: "header" },
+	{ key: "cardAsk", kind: "text", parent: "card", name: "Card: what it asks for", comment: "text: what the order asks for", font: "highlight", wrap: false, sample: "ask" },
+	{ key: "cardRange", kind: "text", parent: "card", name: "Card: item levels", comment: "text: item levels", font: "highlightSmall", sample: "range" },
+	{ key: "cardReward", kind: "text", parent: "card", name: "Card: reward", comment: "text, 2 lines: the reward", font: "highlightSmall", lines: 2, sample: "reward" },
+	{ key: "cardSlot", kind: "slot", parent: "card", name: "Card: item slot", comment: "slot: drop an item here", sample: "slot" },
+	{ key: "cardSend", kind: "button", parent: "card", name: "Card: Send", comment: "button: Send", text: { en: "Send", de: "Senden" } },
+	{ key: "cardReject", kind: "button", parent: "card", name: "Card: Reject", comment: "button: Reject", text: { en: "Reject", de: "Ablehnen" } },
+	{ key: "cardEmpty", kind: "text", parent: "card", name: "Card: empty", comment: "text, centred, 2 lines: shown on an empty card", font: "disable", align: "center", lines: 2, sample: "empty" },
+];
+const BY_KEY = {};
+for (const e of ENTRIES) if (e.key) BY_KEY[e.key] = e;
+const KEYS = ENTRIES.filter(e => e.key).map(e => e.key);
+const SIZES = { window: 2, box: 4, button: 4, bar: 4, pips: 4, text: 3, slot: 3, row: 3, cards: 5 };
+const FIELD_NAMES = {
+	window: ["Width", "Height"], box: ["X", "Y", "Width", "Height"], button: ["X", "Y", "Width", "Height"],
+	bar: ["X", "Y", "Width", "Height"], pips: ["X", "Y", "Width", "Height"], text: ["X", "Y", "Width"],
+	slot: ["X", "Y", "Size"], row: ["X", "Y", "Step"], cards: ["X", "Y", "Width", "Height", "Gap"],
+};
+
+const LUA_HEAD = [
+	"-- Forgeborn: where everything in the main window sits.",
+	"--",
+	"-- Change the numbers by hand, or visually: open tools/layout-editor/index.html in a browser, drag and resize",
+	"-- things, press \"Copy Lua\" and paste the result over this file.",
+	"--",
+	"-- Positions are pixels from the top-left corner of the box a thing sits in; y counts down.",
+	"--   box, button, bar  { x, y, width, height }",
+	"--   text              { x, y, width }      one line, or more where it wraps; its height follows the font",
+	"--   slot              { x, y, size }       an item slot is 37 px; other sizes scale it",
+	"--   row               { x, y, step }       a row of item slots: the first slot, then one every \"step\" px",
+	"--   cards             { x, y, width, height, gap }",
+	"local _, ns = ...",
+	"",
+	"ns.Layout = {",
+];
+
+// Writes UI/Layout.lua for a set of values.
+function toLua(values) {
+	const out = LUA_HEAD.slice();
+	for (const e of ENTRIES) {
+		if (e.section) {
+			out.push("", "\t-- " + e.section);
+			continue;
+		}
+		out.push("\t" + e.key + " = { " + values[e.key].join(", ") + " }, -- " + e.comment);
+	}
+	out.push("}");
+	return out.join("\n") + "\n";
+}
+
+// Reads the entries of a Layout.lua: key = { numbers }. Returns { values, unknown, bad }.
+function fromLua(text, base) {
+	const values = {};
+	for (const k of KEYS) values[k] = base[k].slice();
+	const unknown = [], bad = [], seen = [];
+	const clean = text.replace(/--[^\n]*/g, "");
+	const re = /([A-Za-z_][A-Za-z0-9_]*)\s*=\s*\{([^{}]*)\}/g;
+	let m;
+	while ((m = re.exec(clean))) {
+		const key = m[1];
+		if (!BY_KEY[key]) { unknown.push(key); continue; }
+		const nums = m[2].split(",").map(s => s.trim()).filter(s => s !== "").map(Number);
+		if (nums.length !== SIZES[BY_KEY[key].kind] || nums.some(n => !Number.isFinite(n))) { bad.push(key); continue; }
+		values[key] = nums.map(n => Math.round(n));
+		seen.push(key);
+	}
+	return { values, unknown, bad, seen };
+}
+
+if (typeof module !== "undefined") module.exports = { ENTRIES, KEYS, toLua, fromLua };
+</script>
+
+<script id="app">
+"use strict";
+(function () {
+	if (typeof document === "undefined") return;
+	const $ = id => document.getElementById(id);
+	const luaSource = $("layout-lua").textContent;
+	const defaultsText = luaSource.slice(luaSource.indexOf("\n", luaSource.indexOf("-- layout:start")) + 1, luaSource.indexOf("-- layout:end"));
+	const emptyBase = {};
+	for (const k of KEYS) emptyBase[k] = new Array(SIZES[BY_KEY[k].kind]).fill(0);
+	const DEFAULTS = fromLua(defaultsText, emptyBase).values;
+
+	const STORE = "forgeborn-layout-editor-v1";
+	const state = {
+		values: clone(DEFAULTS), selected: null, zoom: "fit", snap: 1, lang: "en", cards: 4, outlines: false,
+		undo: [], redo: [],
+	};
+	try {
+		const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+		if (saved && saved.values) {
+			for (const k of KEYS) {
+				const v = saved.values[k];
+				if (Array.isArray(v) && v.length === DEFAULTS[k].length && v.every(Number.isFinite)) state.values[k] = v;
+			}
+			for (const k of ["zoom", "snap", "lang", "cards", "outlines"]) if (saved[k] !== undefined) state[k] = saved[k];
+		}
+	} catch (e) { /* storage blocked: start from the addon's layout */ }
+
+	function clone(v) { return JSON.parse(JSON.stringify(v)); }
+	function save() {
+		try {
+			localStorage.setItem(STORE, JSON.stringify({ values: state.values, zoom: state.zoom, snap: state.snap, lang: state.lang, cards: state.cards, outlines: state.outlines }));
+		} catch (e) { /* not saved; the page still works */ }
+	}
+	function changedKeys() { return KEYS.filter(k => state.values[k].join() !== DEFAULTS[k].join()); }
+
+	// ---------------- sample content ----------------
+	const CARD_SAMPLES = [
+		{ header: { en: "Argent Dawn · daily", de: "Argentumdämmerung · täglich" }, ask: { en: "<span class=c-q3>Blue boots</span>", de: "<span class=c-q3>Stiefel (blau)</span>" },
+			range: { en: "Item level 15-25", de: "Gegenstandsstufe 15-25" }, reward: { en: "2× sale value · +500 rep", de: "2× Verkaufswert · +500 Ruf" }, slot: null },
+		{ header: { en: "Thorium Brotherhood · daily", de: "Thoriumbruderschaft · täglich" }, ask: { en: "<span class=c-q2>Green two-hand weapon</span>", de: "<span class=c-q2>Zweihandwaffe (grün)</span>" },
+			range: { en: "Item level 18-28", de: "Gegenstandsstufe 18-28" }, reward: { en: "4g 12s · +750 rep", de: "4g 12s · +750 Ruf" }, slot: ["i-sword", 2] },
+		{ empty: true },
+		{ header: { en: "Steamwheedle Cartel · weekly", de: "Dampfdruckkartell · wöchentlich" }, ask: { en: "<span class=c-q3>3 blue armour pieces</span>", de: "<span class=c-q3>3 Rüstungsteile (blau)</span>" },
+			range: { en: "Item level 15-25 · 1 of 3 sent", de: "Gegenstandsstufe 15-25 · 1 von 3 geliefert" }, reward: { en: "So far 6g 40s · +2,000 rep", de: "Bisher 6g 40s · +2.000 Ruf" }, slot: null },
+	];
+	const EMPTY_CARD = { en: "No order here. The next daily order arrives in 5 h 12 min.", de: "Hier ist kein Auftrag. Der nächste Tagesauftrag kommt in 5 h 12 min." };
+	const ODDS = [["Break", "Bruch", 20, "#c72921"], ["-1", "-1", 8, "#e6802e"], ["0", "0", 16, "#808080"], ["+1", "+1", 48, "#80d161"], ["+2", "+2", 8, "#299e33"]];
+
+	// ---------------- building the window ----------------
+	const wow = $("wow");
+	let nodes = {}; // key -> [elements]
+
+	function cardList() {
+		const list = CARD_SAMPLES.slice();
+		if (state.cards === 5) list.splice(3, 0, { empty: true });
+		return list;
+	}
+
+	function make(tag, cls, parent) {
+		const n = document.createElement(tag);
+		if (cls) n.className = cls;
+		if (parent) parent.appendChild(n);
+		return n;
+	}
+
+	function slotContent(node, item) {
+		node.innerHTML = "";
+		if (!item) return;
+		node.classList.add("q" + item[1]);
+		make("span", "icon " + item[0], node);
+		if (item[2] !== undefined) make("span", "count", node).textContent = item[2];
+	}
+
+	function build() {
+		wow.innerHTML = "";
+		nodes = {};
+		make("div", "frame", wow);
+		make("div", "titlebar", wow).textContent = "Forgeborn";
+		make("div", "portrait", wow);
+		make("div", "closex", wow).textContent = "×";
+		wow.dataset.key = "window";
+		nodes.window = [wow];
+		const parents = { window: [wow] };
+		for (const e of ENTRIES) {
+			if (!e.key || e.key === "window") continue;
+			if (e.parent === "card") continue;
+			for (const parent of parents[e.parent]) {
+				const n = make("div", "el " + e.kind, parent);
+				n.dataset.key = e.key;
+				(nodes[e.key] = nodes[e.key] || []).push(n);
+				if (e.kind === "box") parents[e.key] = [n];
+				fill(e, n);
+			}
+		}
+		// The order cards and what is inside each.
+		const stack = nodes.cards[0];
+		cardList().forEach((sample, i) => {
+			const card = make("div", "card-box", stack);
+			card.style.position = "absolute";
+			card.dataset.card = i;
+			for (const e of ENTRIES) {
+				if (e.parent !== "card") continue;
+				const isEmptyText = e.key === "cardEmpty";
+				if (!!sample.empty !== isEmptyText) continue;
+				const n = make("div", "el " + e.kind, card);
+				n.dataset.key = e.key;
+				(nodes[e.key] = nodes[e.key] || []).push(n);
+				fill(e, n, sample);
+			}
+		});
+		for (const k of KEYS) apply(k);
+		markSelection();
+	}
+
+	function fill(e, n, sample) {
+		if (e.kind === "text") {
+			n.classList.add("f-" + e.font);
+			if (e.wrap === false) n.classList.add("nowrap");
+			n.style.textAlign = e.align || "left";
+			let html;
+			if (e.sample === "empty") html = EMPTY_CARD[state.lang];
+			else if (e.sample) html = sample[e.sample][state.lang];
+			else html = e.text[state.lang];
+			make("span", "t", n).innerHTML = html;
+		} else if (e.kind === "button") {
+			if (e.big) n.classList.add("big");
+			n.textContent = e.text[state.lang];
+		} else if (e.kind === "slot") {
+			slotContent(n, e.sample === "slot" ? sample.slot : [e.icon, e.quality]);
+		} else if (e.kind === "bar") {
+			let x = 0;
+			for (const [en, de, pct, color] of ODDS) {
+				const seg = make("div", "bar-seg", n);
+				seg.style.left = x + "%";
+				seg.style.width = pct + "%";
+				seg.style.background = color;
+				seg.textContent = pct + "%";
+				const label = make("div", "bar-label", n);
+				label.textContent = state.lang === "de" ? de : en;
+				label.dataset.center = x + pct / 2;
+				x += pct;
+			}
+		} else if (e.kind === "pips") {
+			for (let i = 0; i < 7; i++) {
+				const pip = make("div", "pip" + (i < 3 ? " on" : ""), n);
+				make("i", "", pip);
+			}
+		} else if (e.kind === "row") {
+			for (let i = 0; i < e.count; i++) slotContent(make("div", "slotbox", n), e.items[i]);
+		}
+	}
+
+	// Puts every node of an entry where its values say.
+	function apply(key) {
+		const e = BY_KEY[key], v = state.values[key];
+		for (const n of nodes[key] || []) {
+			if (e.kind === "window") {
+				n.style.width = v[0] + "px";
+				n.style.height = v[1] + "px";
+				continue;
+			}
+			n.style.left = v[0] + "px";
+			n.style.top = v[1] + "px";
+			if (e.kind === "text") {
+				// Too long for the game: more lines than it has room for, or cut off where it can't wrap.
+				n.style.width = v[2] + "px";
+				const t = n.querySelector(".t");
+				const lh = parseFloat(getComputedStyle(n).lineHeight) || 14;
+				const tooLong = e.wrap === false ? t.scrollWidth > t.clientWidth + 1 : t.offsetHeight > lh * (e.lines || 1) + 1;
+				n.classList.toggle("overflow", tooLong);
+			} else if (e.kind === "slot") {
+				n.style.width = n.style.height = SLOT + "px";
+				n.style.transformOrigin = "0 0";
+				n.style.transform = "scale(" + v[2] / SLOT + ")";
+			} else if (e.kind === "row") {
+				const step = v[2];
+				n.style.width = (e.count - 1) * step + SLOT + "px";
+				n.style.height = SLOT + "px";
+				Array.from(n.children).forEach((c, i) => { if (c.classList.contains("slotbox")) c.style.left = i * step + "px"; });
+			} else if (e.kind === "cards") {
+				n.style.width = v[2] + "px";
+				const count = n.querySelectorAll(":scope > .card-box").length;
+				n.style.height = count * v[3] + (count - 1) * v[4] + "px";
+				Array.from(n.querySelectorAll(":scope > .card-box")).forEach((c, i) => {
+					c.style.left = "0px";
+					c.style.top = i * (v[3] + v[4]) + "px";
+					c.style.width = v[2] + "px";
+					c.style.height = v[3] + "px";
+				});
+			} else {
+				n.style.width = v[2] + "px";
+				n.style.height = v[3] + "px";
+				if (e.kind === "pips") {
+					const size = v[3], step = (v[2] - size) / 6;
+					Array.from(n.children).forEach((p, i) => { p.style.width = p.style.height = size + "px"; p.style.left = i * step + "px"; });
+				}
+				if (e.kind === "bar") placeBarLabels(n, v[2]);
+			}
+		}
+		if (key === "window") fitZoom();
+	}
+
+	// Outcome labels under the bar, pushed apart where sections are narrow (as in the addon).
+	function placeBarLabels(bar, width) {
+		let lastRight = null;
+		for (const label of bar.querySelectorAll(".bar-label")) {
+			const w = label.offsetWidth;
+			let left = Math.max(width * label.dataset.center / 100 - w / 2, 0);
+			if (lastRight !== null) left = Math.max(left, lastRight + 4);
+			left = Math.max(Math.min(left, width - w), 0);
+			label.style.left = left + "px";
+			lastRight = left + w;
+		}
+	}
+
+	// ---------------- zoom ----------------
+	let zoom = 1;
+	function fitZoom() {
+		const wrap = $("stageWrap");
+		const w = state.values.window[0], h = state.values.window[1];
+		if (state.zoom === "fit") {
+			const avail = wrap.clientWidth - 56;
+			zoom = Math.max(0.3, Math.min(1.5, avail / w));
+		} else {
+			zoom = Number(state.zoom);
+		}
+		wow.style.transform = "scale(" + zoom + ")";
+		$("stage").style.width = w * zoom + 56 + "px";
+		$("stage").style.height = h * zoom + 56 + "px";
+	}
+	window.addEventListener("resize", fitZoom);
+
+	// ---------------- selection, list and inspector ----------------
+	function select(key) {
+		state.selected = key;
+		markSelection();
+		renderInspector();
+		renderTree();
+	}
+
+	function markSelection() {
+		wow.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
+		wow.querySelectorAll(".handle, .readout").forEach(n => n.remove());
+		const key = state.selected;
+		if (!key) return;
+		const list = nodes[key] || [];
+		list.forEach(n => { if (n !== wow) n.classList.add("sel"); });
+		const first = list[0];
+		if (!first) return;
+		const kind = BY_KEY[key].kind;
+		const handle = make("div", "handle" + (kind === "text" || kind === "row" ? " ew" : ""), first);
+		handle.setAttribute("aria-hidden", "true");
+		if (key === "window") { handle.style.right = "-12px"; handle.style.bottom = "-12px"; }
+		const readout = make("div", "readout", first);
+		readout.style.left = "0px";
+		readout.style.top = "0px";
+		readout.textContent = describe(key);
+	}
+
+	function describe(key) {
+		const v = state.values[key], kind = BY_KEY[key].kind;
+		if (kind === "window") return v[0] + " × " + v[1];
+		if (kind === "text") return v[0] + ", " + v[1] + " · w " + v[2];
+		if (kind === "slot") return v[0] + ", " + v[1] + " · " + v[2] + " px";
+		if (kind === "row") return v[0] + ", " + v[1] + " · step " + v[2];
+		if (kind === "cards") return v[0] + ", " + v[1] + " · " + v[2] + " × " + v[3] + " · gap " + v[4];
+		return v[0] + ", " + v[1] + " · " + v[2] + " × " + v[3];
+	}
+
+	const PARENT_NAMES = { window: "Window", anvil: "Anvil box", storage: "Storage box", orders: "Orders box", card: "Each order card" };
+
+	function renderTree() {
+		const tree = $("tree");
+		const changed = new Set(changedKeys());
+		const groups = {};
+		for (const e of ENTRIES) if (e.key) (groups[e.parent || "window"] = groups[e.parent || "window"] || []).push(e);
+		tree.innerHTML = "";
+		for (const parent of ["window", "anvil", "storage", "orders", "card"]) {
+			const div = make("div", "", tree);
+			make("h3", "", div).textContent = PARENT_NAMES[parent];
+			const ul = make("ul", "", div);
+			for (const e of groups[parent]) {
+				const li = make("li", "", ul);
+				const b = make("button", "", li);
+				b.type = "button";
+				b.setAttribute("aria-current", state.selected === e.key ? "true" : "false");
+				const dot = make("span", "dot" + (changed.has(e.key) ? " on" : ""), b);
+				dot.title = changed.has(e.key) ? "Changed" : "";
+				make("span", "", b).textContent = e.name;
+				make("span", "xy", b).textContent = state.values[e.key].join(", ");
+				b.addEventListener("click", () => select(e.key));
+			}
+		}
+		const n = changed.size;
+		const chip = $("changes");
+		chip.textContent = n === 0 ? "no changes" : n === 1 ? "1 change" : n + " changes";
+		chip.classList.toggle("on", n > 0);
+	}
+
+	function renderInspector() {
+		const box = $("inspector");
+		box.innerHTML = "";
+		const key = state.selected;
+		if (!key) {
+			make("p", "empty-note", box).textContent = "Click anything in the window, or pick it from the list.";
+			return;
+		}
+		const e = BY_KEY[key];
+		make("div", "sel-name", box).textContent = e.name;
+		make("div", "sel-meta", box).textContent = (e.parent ? "In: " + PARENT_NAMES[e.parent] + " · " : "") + "Lua: " + key + " (" + e.comment + ")";
+		const fields = make("div", "fields", box);
+		FIELD_NAMES[e.kind].forEach((label, i) => {
+			const l = make("label", "", fields);
+			l.setAttribute("for", "field-" + i);
+			l.append(label);
+			const input = make("input", "", l);
+			input.type = "number";
+			input.id = "field-" + i;
+			input.step = "1";
+			input.value = state.values[key][i];
+			let before = null;
+			input.addEventListener("focus", () => { before = clone(state.values); });
+			input.addEventListener("input", () => {
+				const n = Math.round(Number(input.value));
+				if (!Number.isFinite(n)) return;
+				state.values[key][i] = clampValue(e.kind, i, n);
+				apply(key);
+				markSelection();
+			});
+			input.addEventListener("change", () => {
+				if (before && JSON.stringify(before) !== JSON.stringify(state.values)) remember(before);
+				before = clone(state.values);
+				afterChange();
+			});
+		});
+		const overflow = (nodes[key] || []).some(n => n.classList && n.classList.contains("overflow"));
+		if (overflow) make("div", "warn-line", box).textContent = "The sample text doesn't fit: in game it would wrap into the next line or get cut.";
+	}
+
+	function clampValue(kind, i, n) {
+		if (kind === "window") return Math.max(200, n);
+		if (kind === "slot" && i === 2) return Math.max(12, n);
+		if (kind === "row" && i === 2) return Math.max(12, n);
+		if (kind === "text" && i === 2) return Math.max(10, n);
+		if (kind === "cards" && i === 4) return Math.max(0, n);
+		if (i >= 2) return Math.max(4, n);
+		return n;
+	}
+
+	// ---------------- history ----------------
+	function remember(before) {
+		state.undo.push(before);
+		if (state.undo.length > 200) state.undo.shift();
+		state.redo = [];
+		updateHistoryButtons();
+	}
+	function updateHistoryButtons() {
+		$("undo").disabled = state.undo.length === 0;
+		$("redo").disabled = state.redo.length === 0;
+	}
+	function undo() {
+		if (!state.undo.length) return;
+		state.redo.push(clone(state.values));
+		state.values = state.undo.pop();
+		build(); afterChange(); renderInspector();
+	}
+	function redo() {
+		if (!state.redo.length) return;
+		state.undo.push(clone(state.values));
+		state.values = state.redo.pop();
+		build(); afterChange(); renderInspector();
+	}
+	function afterChange() {
+		save();
+		renderTree();
+		$("luaOut").value = toLua(state.values);
+		updateHistoryButtons();
+	}
+
+	// ---------------- dragging ----------------
+	let drag = null;
+	$("stageWrap").addEventListener("pointerdown", ev => {
+		if (ev.button !== 0) return;
+		const handle = ev.target.closest(".handle");
+		const node = ev.target.closest("[data-key]");
+		if (!node || !wow.contains(node)) { select(null); return; }
+		const key = node.dataset.key;
+		if (state.selected !== key) select(key);
+		const resizing = !!handle;
+		if (key === "window" && !resizing) return;
+		drag = { key, resizing, x0: ev.clientX, y0: ev.clientY, v0: state.values[key].slice(), before: clone(state.values), moved: false };
+		$("stageWrap").setPointerCapture(ev.pointerId);
+		ev.preventDefault();
+	});
+	$("stageWrap").addEventListener("pointermove", ev => {
+		if (!drag) return;
+		const dx = (ev.clientX - drag.x0) / zoom, dy = (ev.clientY - drag.y0) / zoom;
+		if (!drag.moved && Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+		drag.moved = true;
+		const e = BY_KEY[drag.key], v0 = drag.v0, v = v0.slice();
+		const snap = n => Math.round(n / state.snap) * state.snap;
+		if (!drag.resizing) {
+			v[0] = snap(v0[0] + dx);
+			v[1] = snap(v0[1] + dy);
+		} else if (e.kind === "window") {
+			v[0] = snap(v0[0] + dx); v[1] = snap(v0[1] + dy);
+		} else if (e.kind === "text") {
+			v[2] = snap(v0[2] + dx);
+		} else if (e.kind === "slot") {
+			v[2] = snap(v0[2] + Math.max(dx, dy));
+		} else if (e.kind === "row") {
+			v[2] = Math.round(v0[2] + dx / (e.count - 1));
+		} else {
+			v[2] = snap(v0[2] + dx); v[3] = snap(v0[3] + dy);
+		}
+		state.values[drag.key] = v.map((n, i) => clampValue(e.kind, i, n));
+		apply(drag.key);
+		markSelection();
+		syncInspector();
+	});
+	function endDrag() {
+		if (!drag) return;
+		if (drag.moved) { remember(drag.before); afterChange(); renderInspector(); }
+		drag = null;
+	}
+	$("stageWrap").addEventListener("pointerup", endDrag);
+	$("stageWrap").addEventListener("pointercancel", endDrag);
+
+	function syncInspector() {
+		const key = state.selected;
+		if (!key) return;
+		state.values[key].forEach((n, i) => { const f = $("field-" + i); if (f && document.activeElement !== f) f.value = n; });
+	}
+
+	document.addEventListener("keydown", ev => {
+		const typing = ev.target.closest && ev.target.closest("input, textarea");
+		if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "z" && !typing) { ev.preventDefault(); ev.shiftKey ? redo() : undo(); return; }
+		if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "y" && !typing) { ev.preventDefault(); redo(); return; }
+		if (typing) return;
+		if (ev.key === "Escape") { select(null); return; }
+		const key = state.selected;
+		if (!key || key === "window") return;
+		const step = ev.shiftKey ? 10 : 1;
+		const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[ev.key];
+		if (!d) return;
+		ev.preventDefault();
+		remember(clone(state.values));
+		state.values[key][0] += d[0];
+		state.values[key][1] += d[1];
+		apply(key); markSelection(); syncInspector(); afterChange();
+	});
+
+	// ---------------- toolbar ----------------
+	function segment(id, attr, get, set) {
+		const group = $(id);
+		const update = () => group.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset[attr] === String(get()))));
+		group.addEventListener("click", ev => {
+			const b = ev.target.closest("button");
+			if (!b) return;
+			set(b.dataset[attr]);
+			update();
+			save();
+		});
+		update();
+	}
+	segment("zoom", "zoom", () => state.zoom, v => { state.zoom = v; fitZoom(); });
+	segment("snap", "snap", () => state.snap, v => { state.snap = Number(v); });
+	segment("lang", "lang", () => state.lang, v => { state.lang = v; build(); renderInspector(); });
+	segment("cardcount", "cards", () => state.cards, v => { state.cards = Number(v); build(); });
+	const outlines = $("outlines");
+	const setOutlines = () => { wow.classList.toggle("outlines", state.outlines); outlines.setAttribute("aria-pressed", String(state.outlines)); };
+	outlines.addEventListener("click", () => { state.outlines = !state.outlines; setOutlines(); save(); });
+	$("undo").addEventListener("click", undo);
+	$("redo").addEventListener("click", redo);
+
+	// ---------------- export and import ----------------
+	const status = text => { $("status").textContent = text; };
+	$("copy").addEventListener("click", () => {
+		const text = toLua(state.values);
+		$("luaOut").value = text;
+		const fallback = () => { $("luaOut").focus(); $("luaOut").select(); status("Selected the Lua below: copy it with Ctrl+C (⌘C)."); };
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(text).then(() => status("Copied. Paste it over UI/Layout.lua."), fallback);
+		} else fallback();
+	});
+	$("showLoad").addEventListener("click", () => { $("loadBox").hidden = false; $("luaIn").focus(); });
+	$("cancelLoad").addEventListener("click", () => { $("loadBox").hidden = true; });
+	$("load").addEventListener("click", () => {
+		const result = fromLua($("luaIn").value, state.values);
+		if (result.seen.length === 0) { status("No layout entries found. Paste the whole UI/Layout.lua."); return; }
+		remember(clone(state.values));
+		state.values = result.values;
+		build(); afterChange(); renderInspector();
+		let text = "Loaded " + result.seen.length + " entries.";
+		if (result.bad.length) text += " Skipped (wrong number of values): " + result.bad.join(", ") + ".";
+		if (result.unknown.length) text += " Unknown: " + result.unknown.join(", ") + ".";
+		status(text);
+		$("loadBox").hidden = true;
+	});
+	let resetArmed = null;
+	$("reset").addEventListener("click", () => {
+		if (!resetArmed) {
+			$("reset").textContent = "Reset all? Click again";
+			resetArmed = setTimeout(() => { resetArmed = null; $("reset").textContent = "Reset"; }, 3000);
+			return;
+		}
+		clearTimeout(resetArmed); resetArmed = null; $("reset").textContent = "Reset";
+		remember(clone(state.values));
+		state.values = clone(DEFAULTS);
+		build(); afterChange(); renderInspector();
+		status("Back to the addon's layout. Undo brings your changes back.");
+	});
+
+	setOutlines();
+	build();
+	fitZoom();
+	if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { for (const k of KEYS) apply(k); markSelection(); });
+	renderInspector();
+	afterChange();
+})();
+</script>
+<!-- page:end -->
+</body>
+</html>

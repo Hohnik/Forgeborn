@@ -2,13 +2,14 @@
 -- Display case below it, the crafting orders on the right and the Shop button in the footer.
 local _, ns = ...
 
-local L, Data, Rules, W = ns.L, ns.Data, ns.Rules, ns.Widgets
+local L, Data, Rules, W, Layout = ns.L, ns.Data, ns.Rules, ns.Widgets, ns.Layout
 local Drag = W.Drag
 local UI = {}
 ns.UI = UI
 
-UI.WIDTH, UI.HEIGHT = 780, 590
-local BAR_WIDTH, BAR_HEIGHT = 380, 22
+-- Positions and sizes come from UI/Layout.lua (tools/layout-editor edits it).
+UI.WIDTH, UI.HEIGHT = Layout.window[1], Layout.window[2]
+local BAR_WIDTH, BAR_HEIGHT = Layout.odds[3], Layout.odds[4]
 
 local OUTCOME_COLORS = {
 	[Data.BREAK] = { 0.78, 0.16, 0.13 },
@@ -206,25 +207,25 @@ end
 
 local function buildAnvil(parent)
 	local inset = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-	inset:SetPoint("TOPLEFT", 8, -60)
-	inset:SetSize(404, 268)
+	W.Place(inset, Layout.anvil)
 	anvil.inset = inset
 
 	local nextLabel = W.Label(inset, "GameFontNormal", L.NEXT_SWING)
-	nextLabel:SetPoint("TOPLEFT", 12, -10)
+	W.PlaceText(nextLabel, Layout.nextSwing)
 
-	-- Embers: up to 7 small circles that fill toward the automatic Frenzy.
+	-- Embers: up to 7 small circles that fill toward the automatic Frenzy, spread over the pips box.
 	local pips = CreateFrame("Frame", nil, inset)
-	pips:SetSize(7 * 14, 12)
-	pips:SetPoint("TOPRIGHT", -12, -11)
+	W.Place(pips, Layout.pips)
+	local pipSize = Layout.pips[4]
+	local pipStep = (Layout.pips[3] - pipSize) / 6
 	anvil.pips = {}
 	for i = 1, 7 do
 		local back = pips:CreateTexture(nil, "BACKGROUND")
 		back:SetColorTexture(0, 0, 0, 0.6)
-		back:SetSize(12, 12)
-		back:SetPoint("LEFT", (i - 1) * 14, 0)
+		back:SetSize(pipSize, pipSize)
+		back:SetPoint("LEFT", (i - 1) * pipStep, 0)
 		local fill = pips:CreateTexture(nil, "ARTWORK")
-		fill:SetSize(8, 8)
+		fill:SetSize(pipSize * 2 / 3, pipSize * 2 / 3)
 		fill:SetPoint("CENTER", back)
 		local mask = pips:CreateMaskTexture()
 		mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
@@ -237,7 +238,7 @@ local function buildAnvil(parent)
 		anvil.pips[i] = { back = back, fill = fill }
 	end
 	anvil.embers = W.Label(inset, "GameFontHighlightSmall")
-	anvil.embers:SetPoint("RIGHT", pips, "LEFT", -6, 0)
+	W.PlaceText(anvil.embers, Layout.embers, "RIGHT")
 	pips:EnableMouse(true)
 	pips:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -249,8 +250,7 @@ local function buildAnvil(parent)
 
 	-- The odds bar: every outcome of the next swing as a coloured section with its percentage.
 	local bar = CreateFrame("Frame", nil, inset)
-	bar:SetPoint("TOPLEFT", 12, -32)
-	bar:SetSize(BAR_WIDTH, BAR_HEIGHT)
+	W.Place(bar, Layout.odds)
 	local track = bar:CreateTexture(nil, "BACKGROUND")
 	track:SetAllPoints()
 	track:SetColorTexture(0, 0, 0, 0.5)
@@ -290,11 +290,8 @@ local function buildAnvil(parent)
 	bar:SetScript("OnLeave", tooltipHide)
 
 	-- The anvil slot.
-	local holder = CreateFrame("Frame", nil, inset)
-	holder:SetSize(50, 50)
-	holder:SetPoint("TOP", 0, -84)
-	local slot = W.CreateSlot(holder, 1.35)
-	slot:SetPoint("CENTER")
+	local slot = W.CreateSlot(inset)
+	W.PlaceSlot(slot, Layout.anvilSlot)
 	W.AddEffects(slot)
 	anvil.slot = slot
 	slot:SetScript("OnEnter", function(self)
@@ -348,32 +345,31 @@ local function buildAnvil(parent)
 	})
 
 	anvil.name = W.Label(inset, "GameFontNormalLarge")
-	anvil.name:SetPoint("TOP", 0, -142)
-	anvil.name:SetWidth(380)
+	W.PlaceText(anvil.name, Layout.itemName, "CENTER")
+	anvil.name:SetWordWrap(false)
 	anvil.info = W.Label(inset, "GameFontHighlightSmall")
-	anvil.info:SetPoint("TOP", anvil.name, "BOTTOM", 0, -4)
-	anvil.info:SetWidth(380)
+	W.PlaceText(anvil.info, Layout.itemInfo, "CENTER")
 	anvil.value = W.Label(inset, "GameFontHighlight")
-	anvil.value:SetPoint("TOP", anvil.info, "BOTTOM", 0, -4)
+	W.PlaceText(anvil.value, Layout.itemValue, "CENTER")
 	anvil.status = W.Label(inset, "GameFontNormalSmall")
-	anvil.status:SetPoint("TOP", anvil.value, "BOTTOM", 0, -6)
-	anvil.status:SetWidth(384)
+	W.PlaceText(anvil.status, Layout.status, "CENTER")
 	anvil.status:SetWordWrap(true)
 
-	local forge = W.Button(inset, L.FORGE, 182, 32, "SharedButtonLargeTemplate")
-	forge:SetPoint("BOTTOMLEFT", 12, 10)
+	local forge = W.Button(inset, L.FORGE, Layout.forge[3], Layout.forge[4], "SharedButtonLargeTemplate")
+	W.Place(forge, Layout.forge)
 	forge:SetScript("OnClick", UI.Strike)
 	anvil.forge = forge
-	local sell = W.Button(inset, L.SELL, 182, 32)
-	sell:SetPoint("BOTTOMRIGHT", -12, 10)
+	local sell = W.Button(inset, L.SELL, Layout.sell[3], Layout.sell[4])
+	W.Place(sell, Layout.sell)
 	sell:SetScript("OnClick", UI.Sell)
 	anvil.sell = sell
 end
 
-local function slotRow(parent, x, y, count, list)
+-- A row of item slots at a layout row { x, y, step }.
+local function slotRow(parent, row, count, list)
 	for i = 1, count do
 		local slot = W.CreateSlot(parent)
-		slot:SetPoint("TOPLEFT", x + (i - 1) * 44, y)
+		slot:SetPoint("TOPLEFT", row[1] + (i - 1) * row[3], -row[2])
 		slot.index = i
 		slot:SetScript("OnLeave", tooltipHide)
 		slot:SetScript("OnDragStop", function()
@@ -385,18 +381,17 @@ end
 
 local function buildStorage(parent)
 	local inset = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
-	inset:SetPoint("TOPLEFT", 8, -332)
-	inset:SetSize(404, 216)
+	W.Place(inset, Layout.storage)
 
-	W.Label(inset, "GameFontNormal", L.WORKBENCH):SetPoint("TOPLEFT", 12, -10)
-	W.Label(inset, "GameFontNormal", L.SHELF):SetPoint("TOPLEFT", 208, -10)
-	W.Label(inset, "GameFontNormal", L.SUPPLIES):SetPoint("TOPLEFT", 12, -78)
-	W.Label(inset, "GameFontNormal", L.DISPLAY_CASE):SetPoint("TOPLEFT", 12, -146)
+	W.PlaceText(W.Label(inset, "GameFontNormal", L.WORKBENCH), Layout.workbenchTitle)
+	W.PlaceText(W.Label(inset, "GameFontNormal", L.SHELF), Layout.shelfTitle)
+	W.PlaceText(W.Label(inset, "GameFontNormal", L.SUPPLIES), Layout.suppliesTitle)
+	W.PlaceText(W.Label(inset, "GameFontNormal", L.DISPLAY_CASE), Layout.displayTitle)
 	trophyBonusText = W.Label(inset, "GameFontHighlightSmall")
-	trophyBonusText:SetPoint("TOPRIGHT", -12, -148)
+	W.PlaceText(trophyBonusText, Layout.trophyBonus, "RIGHT")
 
 	-- Workbench: click to put on the anvil, drag to the anvil, an order or the Display case.
-	slotRow(inset, 14, -30, Data.WORKBENCH_SLOTS, benchSlots)
+	slotRow(inset, Layout.workbench, Data.WORKBENCH_SLOTS, benchSlots)
 	for i, slot in ipairs(benchSlots) do
 		slot:SetScript("OnEnter", function(self)
 			local piece = ns.db.workbench[i]
@@ -459,7 +454,7 @@ local function buildStorage(parent)
 	end
 
 	-- Shelf: 4 tools, fixed. Drag to reorder; the pending tool is dragged onto a slot to replace it.
-	slotRow(inset, 210, -30, Data.SHELF_SLOTS, shelfSlots)
+	slotRow(inset, Layout.shelf, Data.SHELF_SLOTS, shelfSlots)
 	for i, slot in ipairs(shelfSlots) do
 		slot:SetScript("OnEnter", function(self)
 			local tool = ns.db.shelf[i]
@@ -508,7 +503,7 @@ local function buildStorage(parent)
 	end
 
 	-- Supplies: one-use items. Click (or drag onto the anvil) to use on the anvil item.
-	slotRow(inset, 14, -98, #Data.CONSUMABLE_ORDER, supplySlots)
+	slotRow(inset, Layout.supplies, #Data.CONSUMABLE_ORDER, supplySlots)
 	for i, slot in ipairs(supplySlots) do
 		local id = Data.CONSUMABLE_ORDER[i]
 		slot:SetScript("OnEnter", function(self)
@@ -538,7 +533,7 @@ local function buildStorage(parent)
 
 	-- A tool from a lockbox that has no free shelf slot waits here.
 	pendingSlot = W.CreateSlot(inset)
-	pendingSlot:SetPoint("TOPLEFT", 210, -98)
+	W.PlaceSlot(pendingSlot, Layout.newTool)
 	W.AddEffects(pendingSlot)
 	pendingSlot:SetScript("OnEnter", function(self)
 		if ns.db.pendingTool then
@@ -571,13 +566,11 @@ local function buildStorage(parent)
 		end,
 	})
 	pendingText = W.Label(inset, "GameFontHighlightSmall", L.PENDING_TOOL_HINT)
-	pendingText:SetPoint("TOPLEFT", pendingSlot, "TOPRIGHT", 8, 0)
-	pendingText:SetWidth(140)
-	pendingText:SetJustifyH("LEFT")
+	W.PlaceText(pendingText, Layout.newToolText)
 	pendingText:SetWordWrap(true)
 
 	-- Display case: drag an item here to keep it as a trophy.
-	slotRow(inset, 14, -166, 6, displaySlots)
+	slotRow(inset, Layout.display, 6, displaySlots)
 	for i, slot in ipairs(displaySlots) do
 		slot:SetScript("OnEnter", function(self)
 			local trophy = ns.db.display[i]
@@ -738,17 +731,18 @@ function UI.Build()
 	buildStorage(frame)
 	UI.BuildOrders(frame)
 
+	-- The label keeps its own width so the amount follows right after it.
 	local goldLabel = W.Label(frame, "GameFontNormal", L.ADDON_GOLD)
-	goldLabel:SetPoint("BOTTOMLEFT", 18, 16)
+	goldLabel:SetPoint("TOPLEFT", Layout.gold[1], -Layout.gold[2])
 	goldText = W.Label(frame, "GameFontHighlight")
 	goldText:SetPoint("LEFT", goldLabel, "RIGHT", 6, 0)
-	local shop = W.Button(frame, L.SHOP, 110, 24)
-	shop:SetPoint("BOTTOMRIGHT", -12, 10)
+	local shop = W.Button(frame, L.SHOP, Layout.shop[3], Layout.shop[4])
+	W.Place(shop, Layout.shop)
 	shop:SetScript("OnClick", function()
 		ns.Shop.Toggle()
 	end)
 	local shopHint = W.Label(frame, "GameFontDisableSmall", L.SHOP_HINT)
-	shopHint:SetPoint("RIGHT", shop, "LEFT", -10, 0)
+	W.PlaceText(shopHint, Layout.shopHint, "RIGHT")
 
 	-- The window's parts, for the tests.
 	UI.parts = {

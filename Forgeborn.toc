@@ -22,6 +22,7 @@ Economy.lua
 Forge.lua
 Orders.lua
 Loot.lua
+UI\Layout.lua
 UI\Widgets.lua
 UI\Main.lua
 UI\Orders.lua
