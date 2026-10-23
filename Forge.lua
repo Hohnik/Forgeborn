@@ -19,6 +19,16 @@ function Forge.Value(piece)
 	return Rules.ValueCopper(piece, ns.Economy.Mods(), ns.Economy.TrophyBonus())
 end
 
+-- Sale value in copper if the piece were at another level (the value after a Hit, for the window).
+function Forge.ValueAt(piece, level)
+	local copy = {}
+	for k, v in pairs(piece) do
+		copy[k] = v
+	end
+	copy.level = level
+	return Forge.Value(copy)
+end
+
 -- Finds a piece by uid: returns piece, "anvil" | "bench", bench slot.
 function Forge.Find(uid)
 	local db = ns.db

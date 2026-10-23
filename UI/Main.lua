@@ -251,6 +251,15 @@ local function buildAnvil(parent)
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 		GameTooltip:SetText(L.ODDS_TITLE)
 		GameTooltip:AddLine(L.ODDS_TIP, 1, 1, 1, true)
+		local piece = ns.db.anvil
+		if piece then
+			-- The odds move with every level: show where a Hit would take them.
+			local mods = ns.Economy.Mods()
+			local after = Rules.Percentages(Rules.Odds(Rules.Bag(Rules.PieceGrade(piece) + 1, mods), false))
+			GameTooltip:AddLine(" ")
+			GameTooltip:AddLine(string.format(L.ODDS_AFTER_HIT, after[Data.BREAK]), 1, 0.5, 0.4)
+			GameTooltip:AddLine(string.format(L.ODDS_VALUE_STEP, string.format("%g", Data.VALUE_PER_LEVEL)), 0.8, 0.8, 0.8, true)
+		end
 		GameTooltip:Show()
 	end)
 	bar:SetScript("OnLeave", tooltipHide)
@@ -748,7 +757,7 @@ local function updateAnvil()
 			info = info .. " · " .. string.format(L.LEVELS_TO, toNext, ns.QualityName(quality + 1))
 		end
 		anvil.info:SetText(info)
-		anvil.value:SetText(string.format(L.VALUE, ns.Money(ns.Forge.Value(piece))))
+		anvil.value:SetText(string.format(L.VALUE_AFTER_HIT, ns.Money(ns.Forge.Value(piece)), ns.Money(ns.Forge.ValueAt(piece, piece.level + 1))))
 		frenzy, safe, embers = piece.frenzy or 0, piece.safe or 0, piece.embers or 0
 	else
 		W.SetSlot(anvil.slot, nil)

@@ -40,6 +40,26 @@ local function scripted(...)
 	end
 end
 
+-- A random source for the anvil that lands on the given outcomes in turn ("HIT", "BREAK", ...), whatever the odds
+-- of the anvil item are when it swings.
+local function outcomes(ns, ...)
+	local list, i = { ... }, 0
+	return function(n)
+		i = i + 1
+		local outcome = ns.Data[assert(list[i], "scripted outcomes ran out")]
+		local piece, Rules = ns.db.anvil, ns.Rules
+		local tickets = Rules.Tickets(Rules.Bag(Rules.PieceGrade(piece), ns.Economy.Mods()))
+		local safe, roll = Rules.IsSafe(piece), 1
+		for o = ns.Data.BREAK, outcome - 1 do
+			if not safe or o >= ns.Data.HIT then
+				roll = roll + tickets[o]
+			end
+		end
+		assert(tickets[outcome] > 0 and roll <= n, "outcome " .. list[i] .. " can't be drawn now")
+		return roll
+	end
+end
+
 local function loot(client, item, isFromItem)
 	client:OpenLoot({ item.id }, isFromItem)
 	client:TakeLoot()
@@ -305,9 +325,7 @@ T.test("strikes level the piece, a break destroys it and keeps the records", fun
 	client:Login(nil)
 	local ns = client.ns
 	local piece = setupAnvil(client, ITEMS.BOOTS)
-	-- Gray bag: Break 0, Crack 1, Miss 2-3, Hit 4-17, Great 18-20. At +4 it turns white and the bag changes:
-	-- Break 1, Crack 2, Miss 3-4, Hit 5-17, Great 18-20.
-	ns.Forge.Random = scripted(4, 18, 18, 5)
+	ns.Forge.Random = outcomes(ns, "HIT", "GREAT", "GREAT", "HIT")
 	for _ = 1, 4 do
 		local result = ns.Forge.Strike()
 		T.ok(result and not result.broken)
@@ -317,7 +335,8 @@ T.test("strikes level the piece, a break destroys it and keeps the records", fun
 	T.eq(ns.db.records.best[1], 6)
 	T.eq(ns.db.records.streak, 4)
 	T.eq(ns.db.stats.swings, 4)
-	-- White bag: Break is token 1.
+	-- White +6 (grade 6): 9% of the tickets break it, and the first ticket is a Break.
+	T.near(ns.Rules.NextOdds(piece, ns.Economy.Mods())[ns.Data.BREAK], 0.09, 1e-12)
 	ns.Forge.Random = scripted(1)
 	local result = ns.Forge.Strike()
 	T.ok(result.broken)
@@ -325,7 +344,7 @@ T.test("strikes level the piece, a break destroys it and keeps the records", fun
 	T.eq(ns.db.records.streak, 0)
 	T.eq(ns.db.records.bestStreak, 4)
 	T.eq(ns.db.stats.breaks, 1)
-	T.eq(result.lostValue, math.floor(20 * 1.5 * 1.6 * 100 + 0.5))
+	T.eq(result.lostValue, math.floor(20 * 1.2 ^ 6 * 100 + 0.5))
 	local _, err = ns.Forge.Strike()
 	T.eq(err, "ERR_NO_ITEM")
 end)
@@ -337,7 +356,7 @@ T.test("selling pays the value in copper and records the best sale", function()
 	local piece = setupAnvil(client, ITEMS.HELM)
 	piece.level = 3
 	local value = ns.Forge.Sell()
-	T.eq(value, math.floor(21 * 3.2 * 1.3 * 100 + 0.5))
+	T.eq(value, math.floor(21 * 3.2 * 1.2 ^ 3 * 100 + 0.5))
 	T.eq(ns.db.gold, value)
 	T.eq(ns.db.records.bestSale, value)
 	T.eq(ns.db.records.bestSaleName, "Blue Plate Helm")
@@ -351,14 +370,14 @@ T.test("a gray item taken to orange counts once", function()
 	local ns = client.ns
 	local piece = setupAnvil(client, ITEMS.BOOTS)
 	piece.level = 25 -- purple, one level before orange
-	ns.Forge.Random = scripted(7) -- purple bag: Break 1-4, Crack 5-7 -> a crack, stays purple
+	ns.Forge.Random = outcomes(ns, "CRACK") -- stays purple
 	ns.Forge.Strike()
 	T.eq(ns.db.records.grayToOrange, 0)
-	ns.Forge.Random = scripted(20) -- great hit
+	ns.Forge.Random = outcomes(ns, "GREAT")
 	ns.Forge.Strike()
 	T.eq(ns.Forge.Quality(piece), 5)
 	T.eq(ns.db.records.grayToOrange, 1)
-	ns.Forge.Random = scripted(20)
+	ns.Forge.Random = outcomes(ns, "GREAT")
 	ns.Forge.Strike()
 	T.eq(ns.db.records.grayToOrange, 1)
 end)

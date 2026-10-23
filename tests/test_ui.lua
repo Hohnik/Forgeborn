@@ -32,6 +32,26 @@ local function scripted(...)
 	end
 end
 
+-- A random source for the anvil that lands on the given outcomes in turn ("HIT", "BREAK", ...), whatever the odds
+-- of the anvil item are when it swings.
+local function outcomes(ns, ...)
+	local list, i = { ... }, 0
+	return function(n)
+		i = i + 1
+		local outcome = ns.Data[assert(list[i], "scripted outcomes ran out")]
+		local piece, Rules = ns.db.anvil, ns.Rules
+		local tickets = Rules.Tickets(Rules.Bag(Rules.PieceGrade(piece), ns.Economy.Mods()))
+		local safe, roll = Rules.IsSafe(piece), 1
+		for o = ns.Data.BREAK, outcome - 1 do
+			if not safe or o >= ns.Data.HIT then
+				roll = roll + tickets[o]
+			end
+		end
+		assert(tickets[outcome] > 0 and roll <= n, "outcome " .. list[i] .. " can't be drawn now")
+		return roll
+	end
+end
+
 local function loot(client, item)
 	client:OpenLoot({ item.id })
 	client:TakeLoot()
@@ -89,10 +109,10 @@ local function scenario(locale, project)
 		T.eq(ns.db.anvil.name, "Tattered Boots")
 		T.ok(parts.anvil.forge:IsEnabled() and parts.anvil.sell:IsEnabled())
 		T.ok(parts.anvil.name:GetText():find("Tattered Boots +0", 1, true))
-		-- Gray: no Break, 5% crack, 10% miss, 70% hit, 15% great.
-		T.ok(not parts.odds.segments[1]:IsShown(), "no Break section on gray")
-		T.eq(parts.odds.percents[4]:GetText(), "70%")
-		T.eq(parts.odds.percents[5]:GetText(), "15%")
+		-- Gray +0: no Break, 10% crack, 20% miss, 60% hit, 10% great.
+		T.ok(not parts.odds.segments[1]:IsShown(), "no Break section on gray +0")
+		T.eq(parts.odds.percents[4]:GetText(), "60%")
+		T.eq(parts.odds.percents[5]:GetText(), "10%")
 		T.eq(parts.odds.labels[5]:GetText(), "+2")
 		T.eq(parts.anvil.embers:GetText(), string.format(L.EMBERS, 0, 7))
 		hoverAll(client, parts)
@@ -100,7 +120,7 @@ local function scenario(locale, project)
 
 	T.test(prefix .. "Forge strikes, shows the result, fills embers and fires Frenzy", function()
 		-- 6 hits, then a 7th normal swing (miss) fires Frenzy.
-		ns.Forge.Random = scripted(4, 4, 4, 5, 5, 5, 3)
+		ns.Forge.Random = outcomes(ns, "HIT", "HIT", "HIT", "HIT", "HIT", "HIT", "MISS")
 		for _ = 1, 7 do
 			parts.anvil.forge:Click()
 		end
@@ -121,12 +141,12 @@ local function scenario(locale, project)
 	T.test(prefix .. "a quality-up glows and a break empties the anvil", function()
 		local piece = ns.db.anvil
 		piece.frenzy, piece.level = 0, 7
-		ns.Forge.Random = scripted(5) -- white bag: 5 is a Hit -> +8 = green
+		ns.Forge.Random = outcomes(ns, "HIT") -- +8 = green
 		parts.anvil.forge:Click()
 		T.eq(ns.Forge.Quality(piece), 2)
 		T.ok(parts.anvil.status:GetText():find(ns.QualityName(2), 1, true))
 		local played = client.animationsPlayed or 0
-		ns.Forge.Random = scripted(1) -- green bag: Break
+		ns.Forge.Random = outcomes(ns, "BREAK")
 		parts.anvil.forge:Click()
 		T.eq(ns.db.anvil, nil)
 		T.ok((client.animationsPlayed or 0) > played, "the slot flashed")

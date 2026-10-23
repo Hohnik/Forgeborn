@@ -1,4 +1,4 @@
-"""Forgeborn playtest engine (rules v0.3).
+"""Forgeborn playtest engine (rules v0.3, kept as it was played; rules v0.4 are in ev_per_swing.py).
 
 A tiny command-line version of the anvil, used to playtest the rules in chat
 before any Lua exists. State is kept in state.json next to this file.

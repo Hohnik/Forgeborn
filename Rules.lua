@@ -1,4 +1,7 @@
--- Forgeborn: the rules engine (v0.3). Pure Lua 5.1, no WoW API calls, so it runs in the tests.
+-- Forgeborn: the rules engine (v0.4). Pure Lua 5.1, no WoW API calls, so it runs in the tests.
+--
+-- v0.4 follows ForgeTax's anvil: the odds depend on the item's grade, so they change with every level a swing
+-- gains or loses, and every level multiplies the value by Data.VALUE_PER_LEVEL.
 --
 -- A forged item ("piece") is a table:
 --   startQuality  quality it dropped at (0 gray .. 5 orange)
@@ -30,6 +33,37 @@ function Rules.QualityAt(startQuality, level)
 	return quality, start
 end
 
+-- Level where each quality starts, counted from the start of gray: 0, 4, 8, 13, 19, 26.
+local QUALITY_START = { [0] = 0 }
+for quality = 1, Data.MAX_QUALITY do
+	QUALITY_START[quality] = QUALITY_START[quality - 1] + Data.LEVELS_TO_NEXT[quality - 1]
+end
+Rules.QUALITY_START = QUALITY_START
+
+-- The grade sets the odds: the level counted from the start of gray. A blue drop at +0 is grade 13.
+function Rules.Grade(startQuality, level)
+	return QUALITY_START[startQuality] + level
+end
+
+function Rules.PieceGrade(piece)
+	return Rules.Grade(piece.startQuality, piece.level)
+end
+
+-- Break chance (0 to 1) at a grade on the plain deck, read from Data.BREAK_CURVE.
+function Rules.BreakChance(grade)
+	local curve = Data.BREAK_CURVE
+	if grade <= curve[1][1] then
+		return curve[1][2] / 100
+	end
+	for i = 2, #curve do
+		local a, b = curve[i - 1], curve[i]
+		if grade <= b[1] then
+			return (a[2] + (b[2] - a[2]) * (grade - a[1]) / (b[1] - a[1])) / 100
+		end
+	end
+	return curve[#curve][2] / 100
+end
+
 -- Levels still needed for the next quality, or nil at orange.
 function Rules.LevelsToNext(startQuality, level)
 	local quality, start = Rules.QualityAt(startQuality, level)
@@ -46,8 +80,7 @@ function Rules.NewMods()
 		afterMissHit = nil,
 		frenzySwings = Data.FRENZY_SWINGS,
 		frenzyEvery = Data.EMBERS_FOR_FRENZY,
-		orangeFactor = Data.VALUE_FACTOR[Data.MAX_QUALITY],
-		weaponValue = 0, armorValue = 0, highValue = 0,
+		weaponValue = 0, armorValue = 0, highValue = 0, orangeValue = 0,
 		sulfuron = false,
 	}
 end
@@ -94,8 +127,8 @@ function Rules.ModsFromShelf(shelf)
 				mods.frenzySwings = max(mods.frenzySwings, value)
 			elseif effect == "frenzyEvery" then
 				mods.frenzyEvery = min(mods.frenzyEvery, value)
-			elseif effect == "orangeFactor" then
-				mods.orangeFactor = max(mods.orangeFactor, value)
+			elseif effect == "orangeValue" then
+				mods.orangeValue = mods.orangeValue + value
 			elseif effect == "weaponValue" then
 				mods.weaponValue = mods.weaponValue + value
 			elseif effect == "armorValue" then
@@ -110,10 +143,14 @@ function Rules.ModsFromShelf(shelf)
 	return mods
 end
 
--- Token counts for a quality after tools, in outcome order.
-function Rules.Bag(quality, mods)
-	local base = Data.BAGS[quality]
-	local bag = { base[1], base[2], base[3], base[4], base[5] }
+-- Token weights for a grade after tools, in outcome order. Crack, Miss, Hit and Great hit come from Data.DECK;
+-- Break gets the weight that gives the curve's chance on the plain deck. Break's weight depends on the grade, not on
+-- the deck size, so a tool that adds tokens to another pile also lowers the Break chance (as in ForgeTax).
+function Rules.Bag(grade, mods)
+	local deck = Data.DECK
+	local plain = deck[CRACK] + deck[MISS] + deck[HIT] + deck[GREAT]
+	local chance = min(Rules.BreakChance(grade), 0.99)
+	local bag = { plain * chance / (1 - chance), deck[CRACK], deck[MISS], deck[HIT], deck[GREAT] }
 	if mods then
 		bag[BREAK] = max(0, bag[BREAK] - mods.brk)
 		bag[CRACK] = max(0, bag[CRACK] - mods.crack)
@@ -124,37 +161,20 @@ function Rules.Bag(quality, mods)
 	return bag
 end
 
--- A safe swing redraws Miss, Crack and Break, which is the same as drawing only from Hit and Great hit.
-local function counts(bag, outcome, safe)
-	if safe and outcome < HIT then
-		return 0
-	end
-	return bag[outcome]
-end
-
--- Chance of each outcome (fractions that add up to 1).
-function Rules.Odds(bag, safe)
+-- Splits size into whole numbers in proportion to the weights (largest remainder), in outcome order.
+local function apportion(weights, size)
 	local total = 0
 	for outcome = BREAK, GREAT do
-		total = total + counts(bag, outcome, safe)
+		total = total + (weights[outcome] or 0)
 	end
-	local odds = {}
-	for outcome = BREAK, GREAT do
-		odds[outcome] = total > 0 and counts(bag, outcome, safe) / total or 0
-	end
-	return odds
-end
-
--- Whole percentages that always add up to 100 (largest remainder).
-function Rules.Percentages(odds)
 	local result, remainders, used = {}, {}, 0
 	for outcome = BREAK, GREAT do
-		local exact = (odds[outcome] or 0) * 100
+		local exact = total > 0 and (weights[outcome] or 0) * size / total or 0
 		result[outcome] = floor(exact)
 		remainders[outcome] = exact - result[outcome]
 		used = used + result[outcome]
 	end
-	local left = 100 - used
+	local left = size - used
 	while left > 0 do
 		local best
 		for outcome = BREAK, GREAT do
@@ -172,18 +192,51 @@ function Rules.Percentages(odds)
 	return result
 end
 
--- Draws one token with replacement. rand(n) returns a whole number from 1 to n (math.random).
-function Rules.Draw(bag, safe, rand)
+-- The bag as whole tickets out of Data.TICKETS. Every swing draws one of these, so the odds shown are exact.
+function Rules.Tickets(bag)
+	return apportion(bag, Data.TICKETS)
+end
+
+-- A safe swing redraws Miss, Crack and Break, which is the same as drawing only from Hit and Great hit.
+local function counts(tickets, outcome, safe)
+	if safe and outcome < HIT then
+		return 0
+	end
+	return tickets[outcome]
+end
+
+-- Chance of each outcome (fractions that add up to 1).
+function Rules.Odds(bag, safe)
+	local tickets = Rules.Tickets(bag)
 	local total = 0
 	for outcome = BREAK, GREAT do
-		total = total + counts(bag, outcome, safe)
+		total = total + counts(tickets, outcome, safe)
+	end
+	local odds = {}
+	for outcome = BREAK, GREAT do
+		odds[outcome] = total > 0 and counts(tickets, outcome, safe) / total or 0
+	end
+	return odds
+end
+
+-- Whole percentages that always add up to 100 (largest remainder).
+function Rules.Percentages(odds)
+	return apportion(odds, 100)
+end
+
+-- Draws one ticket with replacement. rand(n) returns a whole number from 1 to n (math.random).
+function Rules.Draw(bag, safe, rand)
+	local tickets = Rules.Tickets(bag)
+	local total = 0
+	for outcome = BREAK, GREAT do
+		total = total + counts(tickets, outcome, safe)
 	end
 	if total <= 0 then
 		return MISS
 	end
 	local roll = rand(total)
 	for outcome = BREAK, GREAT do
-		roll = roll - counts(bag, outcome, safe)
+		roll = roll - counts(tickets, outcome, safe)
 		if roll <= 0 then
 			return outcome
 		end
@@ -197,15 +250,14 @@ end
 
 -- The odds of the next swing for a piece.
 function Rules.NextOdds(piece, mods)
-	local quality = Rules.QualityAt(piece.startQuality, piece.level)
-	return Rules.Odds(Rules.Bag(quality, mods), Rules.IsSafe(piece))
+	return Rules.Odds(Rules.Bag(Rules.PieceGrade(piece), mods), Rules.IsSafe(piece))
 end
 
 -- One swing. Changes the piece and returns what happened.
 function Rules.Strike(piece, mods, rand)
 	local qualityBefore, floorLevel = Rules.QualityAt(piece.startQuality, piece.level)
 	local safe = Rules.IsSafe(piece)
-	local drawn = Rules.Draw(Rules.Bag(qualityBefore, mods), safe, rand)
+	local drawn = Rules.Draw(Rules.Bag(Rules.PieceGrade(piece), mods), safe, rand)
 	local result = {
 		drawn = drawn,
 		outcome = drawn,
@@ -264,14 +316,10 @@ function Rules.Strike(piece, mods, rand)
 	return result
 end
 
--- Value in silver: item level x quality factor x (1 + 0.1 x level), then tool and trophy bonuses.
+-- Value in silver: item level x the start quality's factor x 1.2 per level, then tool and trophy bonuses.
 function Rules.ValueSilver(piece, mods, trophyBonus)
 	local quality = Rules.QualityAt(piece.startQuality, piece.level)
-	local factor = Data.VALUE_FACTOR[quality]
-	if quality == Data.MAX_QUALITY and mods and mods.orangeFactor > factor then
-		factor = mods.orangeFactor
-	end
-	local value = piece.itemLevel * factor * (1 + 0.1 * piece.level)
+	local value = piece.itemLevel * Data.VALUE_FACTOR[piece.startQuality] * Data.VALUE_PER_LEVEL ^ piece.level
 	if mods then
 		if piece.kind == "weapon" then
 			value = value * (1 + mods.weaponValue)
@@ -280,6 +328,9 @@ function Rules.ValueSilver(piece, mods, trophyBonus)
 		end
 		if quality >= 4 then
 			value = value * (1 + mods.highValue)
+		end
+		if quality == Data.MAX_QUALITY then
+			value = value * (1 + mods.orangeValue)
 		end
 	end
 	return value * (1 + (trophyBonus or 0))

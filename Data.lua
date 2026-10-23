@@ -9,22 +9,40 @@ Data.MAX_QUALITY = 5 -- orange (Enum.ItemQuality.Legendary)
 -- Levels needed to leave each quality: gray, white, green, blue, purple. Orange has no cap.
 Data.LEVELS_TO_NEXT = { [0] = 4, [1] = 4, [2] = 5, [3] = 6, [4] = 7 }
 
--- Value factor per quality (gray .. orange).
+-- Value factor of the quality an item dropped at (gray .. orange).
 Data.VALUE_FACTOR = { [0] = 1, [1] = 1.5, [2] = 2.2, [3] = 3.2, [4] = 4.6, [5] = 6.5 }
+
+-- Every level multiplies the value: a Hit x1.2, a Great hit (+2) x1.44, a Crack /1.2.
+Data.VALUE_PER_LEVEL = 1.2
 
 -- Strike outcomes, in odds-bar order.
 Data.BREAK, Data.CRACK, Data.MISS, Data.HIT, Data.GREAT = 1, 2, 3, 4, 5
 Data.OUTCOMES = { 1, 2, 3, 4, 5 }
 
--- Tokens out of 20 per quality, in outcome order: Break, Crack (-1), Miss (0), Hit (+1), Great hit (+2).
-Data.BAGS = {
-	[0] = { 0, 1, 2, 14, 3 },
-	[1] = { 1, 1, 2, 13, 3 },
-	[2] = { 2, 1, 4, 11, 2 },
-	[3] = { 3, 2, 5, 8, 2 },
-	[4] = { 4, 3, 6, 6, 1 },
-	[5] = { 5, 3, 7, 4, 1 },
+-- Rules v0.4: the odds change with every level, like ForgeTax's anvil.
+-- The grade is the level counted from the start of gray, so a blue drop at +0 is grade 13 (see Rules.Grade).
+--
+-- The deck holds the other four outcomes, in outcome order: Break (set by the curve), Crack (-1), Miss (0),
+-- Hit (+1), Great hit (+2). Tools add or remove tokens here.
+Data.DECK = { 0, 2, 4, 12, 2 }
+
+-- Break chance in percent by grade, on the plain deck. Between two points it rises evenly; after the last point
+-- it stays. The Break pile gets the weight that gives this chance on the plain deck, so tools that add tokens to
+-- the other piles also lower the Break chance.
+Data.BREAK_CURVE = {
+	{ 0, 0 }, -- gray +0
+	{ 2, 2 },
+	{ 4, 6 }, -- white
+	{ 8, 12 }, -- green
+	{ 13, 20 }, -- blue
+	{ 19, 30 }, -- purple
+	{ 26, 40 }, -- orange
+	{ 36, 55 },
+	{ 50, 70 }, -- and up
 }
+
+-- Every swing draws one ticket out of this many (the deck scaled to whole tickets).
+Data.TICKETS = 1000
 
 Data.EMBERS_FOR_FRENZY = 7
 Data.FRENZY_SWINGS = 3
@@ -45,8 +63,8 @@ Data.RANK_SALVAGE = { [1] = 10000, [2] = 50000, [3] = 250000, [4] = 1000000 }
 --   afterMissHit     : levels the next Hit gives after a Miss
 --   frenzySwings     : safe swings per Frenzy
 --   frenzyEvery      : normal swings needed for a Frenzy
---   orangeFactor     : value factor for orange
---   weaponValue, armorValue, highValue : value bonus (0.25 = +25%); highValue applies to purple and orange
+--   weaponValue, armorValue, highValue, orangeValue : value bonus (0.25 = +25%); highValue applies to purple
+--                      and orange, orangeValue to orange
 --   sulfuron         : the first Break of each item becomes a Crack
 Data.TOOLS = {
 	HAMMER = { item = 5956, icon = "Interface\\Icons\\INV_Hammer_20", base = 1, effect = "hit", values = { 2, 3, 4, 5 } },
@@ -60,7 +78,7 @@ Data.TOOLS = {
 	ARCANITE = { item = 12360, icon = "Interface\\Icons\\INV_Misc_StoneTablet_05", base = 3, effect = "break", values = { nil, nil, 2, 3 } },
 	BLOOD = { item = 11382, icon = "Interface\\Icons\\INV_Misc_Gem_Bloodstone_03", base = 3, effect = "frenzySwings", values = { nil, nil, 5, 7 } },
 	ELEMENTAL_FLUX = { item = 18567, icon = "Interface\\Icons\\Spell_Frost_FireResistanceTotem", base = 3, effect = "frenzyEvery", values = { nil, nil, 5, 4 } },
-	RIGHTEOUS_ORB = { item = 12811, icon = "Interface\\Icons\\INV_Misc_Gem_Pearl_03", base = 3, effect = "orangeFactor", values = { nil, nil, 9, 12 } },
+	RIGHTEOUS_ORB = { item = 12811, icon = "Interface\\Icons\\INV_Misc_Gem_Pearl_03", base = 3, effect = "orangeValue", values = { nil, nil, 0.4, 0.85 } },
 	SULFURON = { item = 17203, icon = "Interface\\Icons\\Spell_Fire_SealOfFire", base = 4, effect = "sulfuron", values = { nil, nil, nil, 1 } },
 	-- Thorium Brotherhood wares, not in lockboxes.
 	ENCHANTED_THORIUM = { item = 12655, icon = "Interface\\Icons\\INV_Ingot_Eternium", base = 2, effect = "hitMiss", values = { nil, 1, 2, 3 }, exclusive = true },

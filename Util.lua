@@ -167,10 +167,8 @@ function ns.ToolEffectText(id, rank)
 		return ""
 	end
 	local key = "EFFECT_" .. def.effect
-	if def.effect == "weaponValue" or def.effect == "armorValue" or def.effect == "highValue" then
+	if def.effect == "weaponValue" or def.effect == "armorValue" or def.effect == "highValue" or def.effect == "orangeValue" then
 		return string.format(L[key], math.floor(value * 100 + 0.5))
-	elseif def.effect == "orangeFactor" then
-		return string.format(L[key], (string.format("%g", value)))
 	elseif def.effect == "sulfuron" then
 		return L[key]
 	end
