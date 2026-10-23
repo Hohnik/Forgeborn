@@ -28,7 +28,7 @@ interface number differs from `16001`; tick "Load out of date AddOns" or update
 
 Retail WoW (Midnight, 12.1.5) is the closest live client to Forever: it shares 97% of the API functions,
 93% of the UI templates, 98% of the events and 99% of the sound names Forever has; the Classic clients share
-30–80% (measured with `tools/apicheck` against Blizzard's UI source for each client). The branch
+29–79% (measured with `tools/apicheck` against Blizzard's UI source for each client). The branch
 [`retail-test`](../../tree/retail-test) runs the same addon code in retail, with test commands and a checklist.
 
 ## Install
