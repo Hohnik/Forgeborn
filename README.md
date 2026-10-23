@@ -75,6 +75,10 @@ Commands: `/forge` (open the window), `/forge shop`, `/forge records`, `/forge s
   (rules, economy, crafting orders, interface, implementation, open questions)
 - [docs/goal-plans.md](docs/goal-plans.md): four plans for the game's goal (contracts, a
   collection, a guided journey, a guild ladder), with what other games do
+- [docs/run-design.md](docs/run-design.md): proposal to make Forgeborn a run game with a forge
+  fee every 3 crafts: the exact rules, faces, tools, consumables, inspections, meta progression
+- [docs/research/](docs/research/): the relics, jokers, charms, symbols and items of ForgeTax,
+  Balatro, CloverPit, Luck be a Landlord and Slay the Spire, as design reference
 - [docs/wow-forever-api-notes.md](docs/wow-forever-api-notes.md): the WoW Forever UI and
   API facts the addon relies on, read from Blizzard's UI source (build 1.60.1.70450)
 - [CHANGELOG.md](CHANGELOG.md)
@@ -143,6 +147,7 @@ python3 forge.py sell
 python3 ev_per_swing.py           # rules v0.4: expected value of one more swing per quality
 python3 ev_per_swing.py --table   # rules v0.4: the odds of every grade
 python3 contract_quota.py         # how often a value quota is met (docs/goal-plans.md)
+python3 run_sim.py                # forge-fee runs: fee curve, income, how far players get (docs/run-design.md)
 ```
 
 `forge.py` plays rules v0.3, as in the chat playtest.

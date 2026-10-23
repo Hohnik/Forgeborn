@@ -71,6 +71,8 @@ Then: reputation moved into the Shop, one tab per faction, so the footer has onl
 
 23 Oct 2026, while testing in retail: the odds change with every hit, as in ForgeTax, and the price changes with every swing by a multiplier (×1.2 per level). This is rules v0.4. Every item slot is a drag source and a drop target. The window's layout moved into a data file with a visual editor. What the game's goal should be is open; the options are in [goal-plans.md](goal-plans.md).
 
+Later on 23 Oct 2026: the designer proposed a forge fee every few crafts. Worked out in [run-design.md](run-design.md): Forgeborn would become a run game (8 shifts, a fee every 3 crafts, gold and tools inside the run, unlocks across runs). Not decided yet; the decisions it needs are listed there.
+
 ## Rules v0.4
 
 Decided on 23 Oct 2026 after a close look at ForgeTax's anvil ([odds](https://www.forgetax.tools/guides/forging-odds), [sword value](https://www.forgetax.tools/guides/sword-value)): the odds change with every level, and the value grows by a multiplier per level. Everything else in v0.3 stays: the quality ladder, cracks that never cost a quality, embers and Frenzy, safe swings, tools.

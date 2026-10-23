@@ -2,6 +2,8 @@
 
 Oct 23, 2026 · proposal, nothing built yet
 
+**Follow-up:** the designer's idea of a forge fee every few crafts (close to Plan A) is worked out in detail in [run-design.md](run-design.md), which also answers whether Forgeborn becomes a session game.
+
 ## The problem
 
 Today the loop is: loot an item, forge it, sell it, buy lockboxes, get tools, forge better. Crafting orders and records sit on the side. Two things are missing:
