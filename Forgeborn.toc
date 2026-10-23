@@ -3,7 +3,7 @@
 ## Notes: Test build of Forgeborn for retail WoW, to test the addon before WoW Forever launches. Test commands: /forge test
 ## Notes-deDE: Testversion von Forgeborn für Retail-WoW, um das Addon vor dem Start von WoW Forever zu testen. Testbefehle: /forge test
 ## Author: Hohnik
-## Version: 1.0.1-retail-test
+## Version: 1.1.0-retail-test
 ## AllowLoadGameType: standard
 ## SavedVariablesPerCharacter: ForgebornCharDB
 ## IconTexture: Interface\Icons\Trade_BlackSmithing

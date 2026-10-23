@@ -19,8 +19,10 @@ part of the Forever interface. Your real items, gold and stats are never touched
 
 ## Status
 
-Version 1.0.0: the whole design is implemented (rules v0.3, Workbench, Shop, lockboxes,
-tools, Display case, records, crafting orders, reputation, English and German).
+Version 1.1.0: the whole design is implemented (rules v0.4, Workbench, Shop, lockboxes,
+tools, Display case, records, crafting orders, reputation, English and German). Rules v0.4
+follow ForgeTax's anvil: the odds change with every level and every level multiplies the value
+by 1.2. What the game's goal should be is still open: see [docs/goal-plans.md](docs/goal-plans.md).
 
 It is tested outside the game, against Blizzard's UI source for the Forever client
 (build 1.60.1.70450, see [Tests](#tests)). It has not run on a live Forever client yet:
@@ -49,12 +51,15 @@ them out (`.pkgmeta`).
   Rings, necklaces, trinkets, shirts, tabards, quest rewards, crafted, bought and mailed
   items don't count.
 - **Click** a Workbench item to put it on the **anvil**. The bar above it shows the odds of
-  the next swing: Break, −1, 0, +1, +2.
-- **Forge** strikes once. Every 7 normal swings fill the embers and **Frenzy** fires by
-  itself: the next 3 swings can't Miss, Crack or Break.
+  the next swing: Break, −1, 0, +1, +2. The odds change with every level: each Hit raises the
+  Break chance a little, a Crack lowers it again, and better items start higher.
+- **Forge** strikes once. Every level multiplies the value by 1.2 (a Great hit by 1.44); the
+  window shows the value now and after a Hit. Every 7 normal swings fill the embers and
+  **Frenzy** fires by itself: the next 3 swings can't Miss, Crack or Break.
 - **Sell** turns the item into addon gold. Or drag it into the **Display case** to keep it
   as a trophy (a small bonus to every later sale), or onto a **crafting order** card and
-  click **Send**.
+  click **Send**. Every item slot drags both ways: trophies come back out, staged items come
+  off order cards, and sharpening stones drag onto any item.
 - The **Shop** sells lockboxes (the only source of tools), sharpening stones and faction
   wares; each faction's tab shows your reputation. Tools sit on a **shelf of 4**.
 - Hover anything for details; right-click items, tools and trophies for more options.
@@ -68,6 +73,8 @@ Commands: `/forge` (open the window), `/forge shop`, `/forge records`, `/forge s
 
 - [docs/design.md](docs/design.md): the full design and implementation writeup
   (rules, economy, crafting orders, interface, implementation, open questions)
+- [docs/goal-plans.md](docs/goal-plans.md): four plans for the game's goal (contracts, a
+  collection, a guided journey, a guild ladder), with what other games do
 - [docs/wow-forever-api-notes.md](docs/wow-forever-api-notes.md): the WoW Forever UI and
   API facts the addon relies on, read from Blizzard's UI source (build 1.60.1.70450)
 - [CHANGELOG.md](CHANGELOG.md)
@@ -77,7 +84,7 @@ Commands: `/forge` (open the window), `/forge shop`, `/forge records`, `/forge s
 Lua 5.1 (the game's Lua version), [luacheck](https://github.com/lunarmodules/luacheck) and Python 3:
 
 ```sh
-lua5.1 tests/run.lua                 # 103 tests: rules, game logic and the window
+lua5.1 tests/run.lua                 # 114 tests: rules, game logic, the window and its layout
 luacheck .                           # no undefined globals, no unused variables
 python3 tools/apicheck/check_api.py  # every Blizzard API the addon uses exists in Forever
 ```
@@ -93,6 +100,15 @@ python3 tools/apicheck/check_api.py  # every Blizzard API the addon uses exists 
   sound and event against Blizzard's UI source for Forever. Its lists are built by
   `tools/apicheck/gen_fixture.py` from a clone of
   [Gethe/wow-ui-source](https://github.com/Gethe/wow-ui-source) (branch `forever`).
+
+## Layout editor
+
+Every position and size in the window is in [UI/Layout.lua](UI/Layout.lua). To change the
+layout visually, open [tools/layout-editor/index.html](tools/layout-editor/index.html) in a
+browser: the window is drawn at true pixel size; drag things to move them, drag the blue corner
+to resize, check that the German text fits, then press **Copy Lua** and paste the result over
+`UI/Layout.lua` (then `/reload` in game). After editing `UI/Layout.lua` by hand, run
+`python3 tools/layout-editor/sync.py` so the editor starts from it (a test checks this).
 
 ## Figures
 
@@ -124,8 +140,12 @@ cd tools/playtest
 python3 forge.py new --name "Tattered Boots" --quality gray --ilvl 20 --kind armor --seed 2026
 python3 forge.py swing 5
 python3 forge.py sell
-python3 ev_per_swing.py   # expected value of one more swing per quality
+python3 ev_per_swing.py           # rules v0.4: expected value of one more swing per quality
+python3 ev_per_swing.py --table   # rules v0.4: the odds of every grade
+python3 contract_quota.py         # how often a value quota is met (docs/goal-plans.md)
 ```
+
+`forge.py` plays rules v0.3, as in the chat playtest.
 
 ## Layout
 
@@ -133,9 +153,10 @@ python3 ev_per_swing.py   # expected value of one more swing per quality
 Forgeborn.toc    the addon (loads only in WoW Forever)
 *.lua            rules engine, saved data, economy, orders, loot detection, events
 Compat.lua       the few differences between Forever and retail (for the retail test build)
-UI/              the window, the order cards, the Shop, the settings page
+UI/              the window, its layout (Layout.lua), the order cards, the Shop, the settings page
 tests/           test runner, strict client mock, tests
 tools/apicheck/  API existence check against Blizzard's Forever UI source
+tools/layout-editor/  visual editor for UI/Layout.lua
 tools/playtest/  Python playtest engine and balance scripts
 docs/            design writeup, API notes, figures and images
 ```

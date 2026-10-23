@@ -74,12 +74,20 @@ Tick what works; note what doesn't, with a screenshot and the Lua error text.
 
 **Anvil**
 - [ ] Clicking a Workbench item puts it on the anvil; the odds bar shows percentages that add up to 100.
+- [ ] The odds change after every Hit (Break goes up), a Crack lowers them again; the odds bar's tooltip shows the Break chance after a Hit.
+- [ ] The value line shows the value and the value after a Hit; a Hit multiplies the value by 1.2.
 - [ ] Forge: a sound, a status line, embers fill; after 7 normal swings Frenzy starts and the odds bar shows no break or miss.
 - [ ] A quality-up glows in the new colour; a break flashes red, empties the anvil and writes to chat.
 - [ ] Sell adds addon gold, shown in the footer.
 
 **Drag and drop, menus, tooltips**
 - [ ] Workbench ↔ anvil, Workbench ↔ Workbench, anvil → Display case, items onto order cards.
+- [ ] Display case → anvil and → Workbench (the item comes back with its level); trophy onto trophy reorders; an item dropped on a trophy swaps with it.
+- [ ] Order card → another card, → anvil, → Workbench; dragged off into empty space it leaves the card.
+- [ ] Sharpening stone → any Workbench item; an item dropped on a stone uses it; a shelf tool dropped on the new tool swaps with it.
+
+**Layout**
+- [ ] Move something in `tools/layout-editor/index.html`, Copy Lua, paste over `UI/Layout.lua`, `/reload`: the window matches the editor.
 - [ ] Right-click menus on Workbench items, the anvil, tools, trophies and a new tool.
 - [ ] Every slot has a tooltip; empty slots explain what they are for.
 

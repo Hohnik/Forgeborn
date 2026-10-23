@@ -6,7 +6,7 @@ Oct 22, 2026 · @Niklas
 
 Forgeborn is a push-your-luck forging minigame addon for World of Warcraft: Forever. You take a copy of an item you really looted and strike it up the gray → white → green → blue → purple → orange ladder, one hit at a time. Every hit can break it, so you sell before it does.
 
-Status: the rules are at v0.3 after a chat playtest on 22 Oct 2026. The addon is implemented as version 1.0.0 (22 Oct 2026) and tested outside the game against Blizzard's UI source for the Forever client (build 1.60.1.70450). It has not run on a live client yet; Forever launches on 4 Nov 2026.
+Status: the rules are at v0.4 (23 Oct 2026): the odds change with every level and every level multiplies the value by 1.2, after a close look at ForgeTax's anvil. v0.3 came from a chat playtest on 22 Oct 2026. The addon is implemented as version 1.1.0 (23 Oct 2026) and tested outside the game against Blizzard's UI source for the Forever client (build 1.60.1.70450). It has not run on a live client yet; Forever launches on 4 Nov 2026.
 
 The five pillars:
 
@@ -69,7 +69,59 @@ Then: only two action buttons remain, Forge and Sell. Moving an item to the Disp
 
 Then: reputation moved into the Shop, one tab per faction, so the footer has only the Shop button.
 
+23 Oct 2026, while testing in retail: the odds change with every hit, as in ForgeTax, and the price changes with every swing by a multiplier (×1.2 per level). This is rules v0.4. Every item slot is a drag source and a drop target. The window's layout moved into a data file with a visual editor. What the game's goal should be is open; the options are in [goal-plans.md](goal-plans.md).
+
+## Rules v0.4
+
+Decided on 23 Oct 2026 after a close look at ForgeTax's anvil ([odds](https://www.forgetax.tools/guides/forging-odds), [sword value](https://www.forgetax.tools/guides/sword-value)): the odds change with every level, and the value grows by a multiplier per level. Everything else in v0.3 stays: the quality ladder, cracks that never cost a quality, embers and Frenzy, safe swings, tools.
+
+How ForgeTax does it: every strike draws one ticket out of 1,000. The deck holds 2 Damage, 5 Hold, 12 Success and 2 Great tickets; the Break pile gets a weight from the sword's grade, chosen so that Break comes out at a curve's value (0% at +0, 24.8% at +4, 46.7% at +10, 72% from +30). The other four share the rest in their fixed ratio, so a relic that adds tickets also lowers Break. A sword is worth 320 G × 1.5 per level.
+
+Forgeborn v0.4 does the same with its own numbers:
+
+- **Grade.** The odds depend on the grade: the level counted from the start of gray, so better drops start higher. Gray starts at grade 0, white 4, green 8, blue 13, purple 19, orange 26. A blue drop at +0 is grade 13.
+- **The deck.** Crack 2, Miss 4, Hit 12, Great hit 2 tokens (`Data.DECK`). The Break pile weighs 20 × p / (1 − p), where p is the curve's chance, so on the plain deck Break comes out at exactly p. Tools add or remove tokens as before; a tool that adds tokens also lowers the Break chance. The deck is scaled to 1,000 whole tickets (largest remainder), so the odds shown are the odds drawn.
+- **Break curve** (`Data.BREAK_CURVE`), rising evenly between these points:
+
+| Grade | 0 | 2 | 4 (white) | 8 (green) | 13 (blue) | 19 (purple) | 26 (orange) | 36 | 50 and up |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Break | 0% | 2% | 6% | 12% | 20% | 30% | 40% | 55% | 70% |
+
+- **Value.** Item level × the start quality's factor × 1.2 per level (`Data.VALUE_PER_LEVEL`): a Hit is ×1.2, a Great hit ×1.44, a Crack ÷1.2.
+
+```latex
+\text{value (silver)} = \text{item level} \times \text{factor of the start quality} \times 1.2^{\text{level}}
+```
+
+  Example: gray boots of item level 20 forged to blue +13 are worth 20 × 1.2¹³ = 214 silver (2g 14s); a blue drop of item level 20 is worth 64 silver at +0 and 1g 59s at +5.
+- **Righteous Orb.** Orange items are worth +40% (+85% at legendary), instead of orange counting ×9 (×12).
+
+Odds at the start of each quality (all grades: `python3 tools/playtest/ev_per_swing.py --table`):
+
+| Grade | Break | Crack −1 | Miss 0 | Hit +1 | Great hit +2 | Value |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0, gray | 0% | 10% | 20% | 60% | 10% | ×1 |
+| 4, white | 6% | 9.4% | 18.8% | 56.4% | 9.4% | ×2.1 |
+| 8, green | 12% | 8.8% | 17.6% | 52.8% | 8.8% | ×4.3 |
+| 13, blue | 20% | 8% | 16% | 48% | 8% | ×10.7 |
+| 19, purple | 30% | 7% | 14% | 42% | 7% | ×31.9 |
+| 26, orange | 40% | 6% | 12% | 36% | 6% | ×114.5 |
+
+One more swing, as a share of selling now (item started gray, no tools, Frenzy not counted): gray 113%, white 106%, green 98%, blue 87%, purple 76%, orange 64% (v0.3: 122, 113, 101, 92, 83, 75). So the story of v0.3 holds: gray and white pay, green is break-even, blue and up lose.
+
+Best stop-or-swing strategy (Frenzy and the Sulfuron Ingot included, 30 swings), as a ratio to selling at once:
+
+| Tools | Gray | White | Green | Blue | Purple | Orange |
+| --- | --- | --- | --- | --- | --- | --- |
+| None | 5.39 | 2.54 | 1.50 | 1.00 | 1.00 | 1.00 |
+| Epic Hammer, Fiery Core, Lava Core, Arcanite Bar | 53.1 | 25.5 | 11.5 | 4.89 | 2.08 | 1.00 |
+| Legendary Sulfuron Ingot, Fiery Core, Lava Core, Arcanite Bar | 562 | 275 | 129 | 47.5 | 18.1 | 6.85 |
+
+The design goals still hold: without tools, selling at once is best from blue up; epic tools make purple worth forging but not orange; legendary tools with the Sulfuron Ingot make orange worth forging. **To tune:** with a value that multiplies, strong tools snowball far more than in v0.3 (where the same legendary set gave 5.31 at blue). Lockbox prices, the tools' token counts or `VALUE_PER_LEVEL` need a look once tools are in play.
+
 ## Rules v0.3
+
+v0.3 was the rule set of the chat playtest and of version 1.0.0. v0.4 above replaces its strike bags and its value formula.
 
 Each swing draws one token from a 20-token bag set by the item's current quality. From blue upward, at least 3 tokens in 20 break the item.
 
@@ -344,6 +396,8 @@ Core.lua
 - **Opening:** `ShowUIPanel` places the window like a native panel (left side, Esc closes it). Blizzard blocks `ShowUIPanel` and `HideUIPanel` for addons in combat, so in combat the window and the Shop show and hide themselves directly; nothing is locked in combat.
 - **Drag and drop** runs on the addon's own buttons: the source button starts a drag and on release the drop target under the mouse takes it. Every drag also has a click or right-click menu: click a Workbench item to put it on the anvil, right-click items, tools and trophies for their options, click a sharpening stone to use it.
 - **No match hints:** order cards never highlight a fitting item; Send checks the item and says what doesn't fit.
+- **Every item slot drags both ways** (1.1.0): the anvil and the Workbench take any item, trophies and sharpening stones; trophies drag back out of the Display case (they keep the whole item) or swap with an item dropped on them; a staged item drags off an order card; an item dropped on a sharpening stone uses it; a shelf tool dropped on the waiting new tool swaps with it.
+- **Layout** (1.1.0): every position and size in the window is in `UI/Layout.lua`. `tools/layout-editor/index.html` shows the window at true pixel size, lets you drag and resize everything, and writes the file back.
 - **Records** show in the tooltip of the window's portrait and with `/forge records`.
 - **Settings page** (Settings → AddOns → Forgeborn): sounds on or off, and chat lines for new Workbench items.
 
@@ -418,9 +472,9 @@ The capital city is Stormwind (humans, night elves), Ironforge (dwarves, gnomes)
 - Argent Dawn: any armour slot. Weekly: armour.
 - Rewards and rejects as proposed: daily 2× sale value and 500 reputation, weekly 4× each item's value and 2,000 reputation when the last item is in, +50% per quality step above the ask, a reject costs 125 (daily) or 500 (weekly) reputation. Reputation never drops below Neutral.
 
-### Balance check
+### Balance check (rules v0.3)
 
-The tests compute the best stop-or-swing strategy (Frenzy and the Sulfuron Ingot included) as a ratio to selling at once. 1.00 means selling at once is best.
+The v0.4 numbers are in [Rules v0.4](#rules-v04). The tests compute the best stop-or-swing strategy (Frenzy and the Sulfuron Ingot included) as a ratio to selling at once. 1.00 means selling at once is best.
 
 | Tools | Blue | Purple | Orange |
 | --- | --- | --- | --- |
@@ -432,7 +486,7 @@ Without tools, selling at once stays the best play from blue up, as the playtest
 
 ### Tests
 
-- `lua5.1 tests/run.lua`: 103 tests. The rules engine against the tables above and the Python playtest numbers; the game logic and the window inside a strict mock of the client, in English and German, as Forever and as the retail test build.
+- `lua5.1 tests/run.lua`: 114 tests. The rules engine against the tables above and the Python playtest numbers; the game logic, the window and its layout inside a strict mock of the client, in English and German, as Forever and as the retail test build.
 - `luacheck .`: no undefined globals and no unused variables.
 - `python3 tools/apicheck/check_api.py`: every global, `C_` function, template, font, atlas, texture, sound and event the addon uses exists in Blizzard's UI source for Forever.
 
