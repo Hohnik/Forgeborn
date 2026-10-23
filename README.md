@@ -112,7 +112,13 @@ layout visually, open [tools/layout-editor/index.html](tools/layout-editor/index
 browser: the window is drawn at true pixel size; drag things to move them, drag the blue corner
 to resize, check that the German text fits, then press **Copy Lua** and paste the result over
 `UI/Layout.lua` (then `/reload` in game). After editing `UI/Layout.lua` by hand, run
-`python3 tools/layout-editor/sync.py` so the editor starts from it (a test checks this).
+`python3 tools/layout-editor/sync.py` so the editor and the Figma plugin start from it (a test checks this).
+
+**In Figma:** the [Forgeborn Layout plugin](tools/figma-plugin/README.md) draws the window as editable Figma
+layers and reads your changes back as `UI/Layout.lua` (Figma desktop app: Plugins → Development → Import plugin
+from manifest → `tools/figma-plugin/manifest.json`). For a quick look, drag
+[forgeborn-window.svg](tools/figma-plugin/forgeborn-window.svg) into Figma, or press **Copy for Figma** in the
+editor and paste.
 
 ## Figures
 
@@ -162,6 +168,7 @@ UI/              the window, its layout (Layout.lua), the order cards, the Shop,
 tests/           test runner, strict client mock, tests
 tools/apicheck/  API existence check against Blizzard's Forever UI source
 tools/layout-editor/  visual editor for UI/Layout.lua
+tools/figma-plugin/   Figma plugin and SVG for UI/Layout.lua
 tools/playtest/  Python playtest engine and balance scripts
 docs/            design writeup, API notes, figures and images
 ```

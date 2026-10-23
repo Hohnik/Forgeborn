@@ -299,6 +299,7 @@ textarea {
 				</ol>
 				<div class="row">
 					<button type="button" class="btn primary" id="copy">Copy Lua</button>
+					<button type="button" class="btn" id="copySvg" title="Copies the window as SVG: paste it into Figma with Ctrl+V (⌘V)">Copy for Figma</button>
 					<button type="button" class="btn" id="showLoad">Load Lua…</button>
 					<button type="button" class="btn danger" id="reset">Reset</button>
 				</div>
@@ -515,7 +516,205 @@ function fromLua(text, base) {
 	return { values, unknown, bad, seen };
 }
 
-if (typeof module !== "undefined") module.exports = { ENTRIES, KEYS, toLua, fromLua };
+
+// ---------------------------------------------------------------------------
+// Sample content and the in-game look, shared by the editor, the SVG export and the Figma plugin.
+// ---------------------------------------------------------------------------
+const CARD_SAMPLES = [
+	{ header: { en: "Argent Dawn · daily", de: "Argentumdämmerung · täglich" }, ask: { en: "<span class=c-q3>Blue boots</span>", de: "<span class=c-q3>Stiefel (blau)</span>" },
+		range: { en: "Item level 15-25", de: "Gegenstandsstufe 15-25" }, reward: { en: "2× sale value · +500 rep", de: "2× Verkaufswert · +500 Ruf" }, slot: null },
+	{ header: { en: "Thorium Brotherhood · daily", de: "Thoriumbruderschaft · täglich" }, ask: { en: "<span class=c-q2>Green two-hand weapon</span>", de: "<span class=c-q2>Zweihandwaffe (grün)</span>" },
+		range: { en: "Item level 18-28", de: "Gegenstandsstufe 18-28" }, reward: { en: "4g 12s · +750 rep", de: "4g 12s · +750 Ruf" }, slot: ["i-sword", 2] },
+	{ empty: true },
+	{ header: { en: "Steamwheedle Cartel · weekly", de: "Dampfdruckkartell · wöchentlich" }, ask: { en: "<span class=c-q3>3 blue armour pieces</span>", de: "<span class=c-q3>3 Rüstungsteile (blau)</span>" },
+		range: { en: "Item level 15-25 · 1 of 3 sent", de: "Gegenstandsstufe 15-25 · 1 von 3 geliefert" }, reward: { en: "So far 6g 40s · +2,000 rep", de: "Bisher 6g 40s · +2.000 Ruf" }, slot: null },
+];
+const EMPTY_CARD = { en: "No order here. The next daily order arrives in 5 h 12 min.", de: "Hier ist kein Auftrag. Der nächste Tagesauftrag kommt in 5 h 12 min." };
+const ODDS = [["Break", "Bruch", 20, "#c72921"], ["-1", "-1", 8, "#e6802e"], ["0", "0", 16, "#808080"], ["+1", "+1", 48, "#80d161"], ["+2", "+2", 8, "#299e33"]];
+
+// 4 cards (3 daily, the weekly) or 5 (the capital city's 4th daily slot).
+function cardSamples(count) {
+	const list = CARD_SAMPLES.slice();
+	if (count === 5) list.splice(3, 0, { empty: true });
+	return list;
+}
+
+const WOW = {
+	font: "Marcellus",
+	frame: "#1d1914", edge: "#6b5631", inset: "#0d0b09", insetEdge: "#3a3022",
+	gold: "#ffd100", white: "#ffffff", gray: "#8a8a8a",
+	button: "#7a140b", buttonBig: "#9e2213", slot: "#15120f", slotEdge: "#34302a",
+	pipOn: "#ff661a", pipOff: "#404040",
+	colors: { "c-w": "#ffffff", "c-g": "#ffd100", "c-q2": "#1eff00", "c-q3": "#0070dd", "c-q4": "#a335ee", "c-red": "#ff6f5a" },
+	quality: ["#9d9d9d", "#e8e8e8", "#1eff00", "#0070dd", "#a335ee", "#ff8000"],
+	icons: { "i-boot": "#6b5034", "i-sword": "#5b6670", "i-helm": "#3c5978", "i-chest": "#3f5a2a", "i-hammer": "#6d7277",
+		"i-flux": "#8f8670", "i-core": "#e8681a", "i-stone": "#6f6a61", "i-gem": "#9b3fd0", "i-orb": "#7fb1dc" },
+	// GameFont templates: size, line height, colour
+	fonts: { normal: [12.5, 15, "gold"], normalSmall: [10.5, 13, "gold"], normalLarge: [16.5, 19, "gold"], highlight: [12.5, 15, "white"],
+		highlightSmall: [10.5, 13, "white"], disable: [12.5, 15, "gray"], disableSmall: [10.5, 13, "gray"] },
+};
+
+// "<span class=c-q3>Blue</span> boots" -> [{ text: "Blue", color: "#0070dd" }, { text: " boots", color: null }]
+function textRuns(html) {
+	const runs = [], stack = [];
+	const re = /<span class=([\w-]+)>|<\/span>|([^<]+)/g;
+	let m;
+	while ((m = re.exec(html))) {
+		if (m[1]) stack.push(WOW.colors[m[1]] || null);
+		else if (m[2]) runs.push({ text: m[2], color: stack.length ? stack[stack.length - 1] : null });
+		else stack.pop();
+	}
+	return runs;
+}
+
+// The sample text of an entry; card is a CARD_SAMPLES entry for order card texts.
+function sampleText(e, lang, card) {
+	if (e.sample === "empty") return EMPTY_CARD[lang];
+	if (e.sample) return card && card[e.sample] ? card[e.sample][lang] : "";
+	return e.text ? e.text[lang] : "";
+}
+
+function xml(s) {
+	return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// The window as SVG, for Figma (drag the file in, or paste the text). Every element is a group named after its
+// Layout.lua key with a "<key>-box" rectangle that is its layout box; the Figma plugin reads those back.
+function toSVG(values, lang, cardCount) {
+	lang = lang || "en";
+	const W = values.window[0], H = values.window[1];
+	const out = [];
+	const at = { window: [0, 0] };
+	for (const k of ["anvil", "storage", "orders"]) at[k] = [values[k][0], values[k][1]];
+	const font = WOW.font + ", Georgia, serif";
+	function rect(id, x, y, w, h, fill, extra) {
+		out.push('<rect' + (id ? ' id="' + xml(id) + '"' : "") + ' x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + fill + '"' + (extra || "") + '/>');
+	}
+	function words(runs) {
+		const list = [];
+		for (const r of runs) for (const part of r.text.split(/(\s+)/)) if (part) list.push({ text: part, color: r.color });
+		return list;
+	}
+	function text(id, x, y, w, html, fontKey, align, lines, wrap) {
+		const f = WOW.fonts[fontKey], size = f[0], lh = f[1], color = WOW[f[2]];
+		const perLine = Math.max(4, Math.floor(w / (size * 0.5)));
+		const rows = [[]];
+		let used = 0;
+		for (const wd of words(textRuns(html))) {
+			if (wrap !== false && (lines || 1) > 1 && used + wd.text.length > perLine && used > 0 && rows.length < lines + 2) {
+				rows.push([]);
+				used = 0;
+				if (/^\s+$/.test(wd.text)) continue;
+			}
+			rows[rows.length - 1].push(wd);
+			used += wd.text.length;
+		}
+		const anchor = align === "center" ? "middle" : align === "right" ? "end" : "start";
+		const tx = align === "center" ? x + w / 2 : align === "right" ? x + w : x;
+		out.push('<g id="' + id + '">');
+		rect(id + "-box", x, y, w, lh * (lines || 1), "none");
+		out.push('<text x="' + tx + '" y="' + (y + lh * 0.78).toFixed(1) + '" font-family="' + font + '" font-size="' + size + '" fill="' + color + '" text-anchor="' + anchor + '">');
+		rows.forEach((row, i) => {
+			out.push('<tspan x="' + tx + '"' + (i ? ' dy="' + lh + '"' : "") + ">" +
+				row.map(wd => wd.color ? '<tspan fill="' + wd.color + '">' + xml(wd.text) + "</tspan>" : xml(wd.text)).join("") + "</tspan>");
+		});
+		out.push("</text></g>");
+	}
+	function slot(id, x, y, size, item) {
+		rect(id, x, y, size, size, WOW.slot, ' rx="3" stroke="' + WOW.slotEdge + '" stroke-width="1"');
+		if (item) rect(id + "-icon", x + 2, y + 2, size - 4, size - 4, WOW.icons[item[0]], ' rx="2" stroke="' + WOW.quality[item[1]] + '" stroke-width="1.5"');
+	}
+	function element(e, ox, oy, card, idPrefix) {
+		const v = values[e.key], id = (idPrefix || "") + e.key;
+		const x = ox + v[0], y = oy + v[1];
+		if (e.kind === "box") {
+			out.push('<g id="' + id + '">');
+			rect(id + "-box", x, y, v[2], v[3], WOW.inset, ' rx="2" stroke="' + WOW.insetEdge + '" stroke-width="1"');
+		} else if (e.kind === "text") {
+			text(id, x, y, v[2], sampleText(e, lang, card), e.font, e.align, e.lines, e.wrap);
+		} else if (e.kind === "button") {
+			out.push('<g id="' + id + '">');
+			rect(id + "-box", x, y, v[2], v[3], e.big ? WOW.buttonBig : WOW.button, ' rx="4" stroke="' + WOW.edge + '" stroke-width="1"');
+			out.push('<text x="' + (x + v[2] / 2) + '" y="' + (y + v[3] / 2 + (e.big ? 5 : 4)) + '" font-family="' + font + '" font-size="' + (e.big ? 15 : 12.5) + '" fill="' + WOW.gold + '" text-anchor="middle">' + xml(e.text[lang]) + "</text></g>");
+		} else if (e.kind === "bar") {
+			out.push('<g id="' + id + '">');
+			rect(id + "-box", x, y, v[2], v[3], "#000000", ' fill-opacity="0.5"');
+			let sx = 0;
+			for (const o of ODDS) {
+				const w = v[2] * o[2] / 100;
+				rect("", (x + sx).toFixed(1), y, w.toFixed(1), v[3], o[3]);
+				out.push('<text x="' + (x + sx + w / 2).toFixed(1) + '" y="' + (y + v[3] / 2 + 4) + '" font-family="' + font + '" font-size="10.5" fill="#ffffff" text-anchor="middle">' + o[2] + "%</text>");
+				out.push('<text x="' + (x + sx + w / 2).toFixed(1) + '" y="' + (y + v[3] + 13) + '" font-family="' + font + '" font-size="10.5" fill="' + WOW.gray + '" text-anchor="middle">' + xml(lang === "de" ? o[1] : o[0]) + "</text>");
+				sx += w;
+			}
+			out.push("</g>");
+		} else if (e.kind === "pips") {
+			out.push('<g id="' + id + '">');
+			rect(id + "-box", x, y, v[2], v[3], "none");
+			const size = v[3], step = (v[2] - size) / 6;
+			for (let i = 0; i < 7; i++) {
+				const cx = (x + i * step + size / 2).toFixed(1), cy = y + size / 2;
+				out.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + size / 2 + '" fill="#000000" fill-opacity="0.6"/>');
+				out.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + (size / 3).toFixed(1) + '" fill="' + (i < 3 ? WOW.pipOn : WOW.pipOff) + '"/>');
+			}
+			out.push("</g>");
+		} else if (e.kind === "slot") {
+			out.push('<g id="' + id + '">');
+			slot(id + "-box", x, y, v[2], e.sample === "slot" ? (card && card.slot) : [e.icon, e.quality]);
+			out.push("</g>");
+		} else if (e.kind === "row") {
+			out.push('<g id="' + id + '">');
+			rect(id + "-box", x, y, (e.count - 1) * v[2] + SLOT, SLOT, "none");
+			for (let i = 0; i < e.count; i++) slot(id + "-" + (i + 1), x + i * v[2], y, SLOT, e.items[i]);
+			out.push("</g>");
+		}
+	}
+	out.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + (W + 24) + '" height="' + (H + 24) + '" viewBox="-12 -12 ' + (W + 24) + " " + (H + 24) + '">');
+	out.push('<g id="window">');
+	rect("window-box", 0, 0, W, H, WOW.frame, ' rx="6" stroke="' + WOW.edge + '" stroke-width="3"');
+	out.push('<g id="decoration">');
+	out.push('<text x="' + W / 2 + '" y="17" font-family="' + font + '" font-size="13" fill="' + WOW.gold + '" text-anchor="middle">Forgeborn</text>');
+	out.push('<circle cx="23" cy="23" r="31" fill="#3f4348" stroke="' + WOW.edge + '" stroke-width="3"/>');
+	rect("", W - 24, 3, 20, 20, "#7a1208", ' rx="4"');
+	out.push("</g>");
+	for (const e of ENTRIES) {
+		if (!e.key || e.parent !== "window") continue;
+		element(e, 0, 0);
+		if (e.kind === "box") {
+			// the box group holds its children, so they move with it in Figma
+			for (const c of ENTRIES) if (c.parent === e.key && c.kind !== "cards") element(c, at[e.key][0], at[e.key][1]);
+			if (e.key === "orders") cardsSVG();
+			out.push("</g>");
+		}
+	}
+	function cardsSVG() {
+		const c = values.cards, ox = at.orders[0] + c[0], oy = at.orders[1] + c[1];
+		const list = cardSamples(cardCount || 4);
+		out.push('<g id="cards">');
+		rect("cards-box", ox, oy, c[2], list.length * c[3] + (list.length - 1) * c[4], "none");
+		const named = {}; // the first card showing an element gets the plain key as its name
+		list.forEach((card, i) => {
+			const cx = ox, cy = oy + i * (c[3] + c[4]);
+			const name = "card-" + (i + 1);
+			out.push('<g id="' + name + '">');
+			rect(name + "-box", cx, cy, c[2], c[3], WOW.inset, ' rx="2" stroke="' + WOW.insetEdge + '" stroke-width="1"');
+			for (const e of ENTRIES) {
+				if (e.parent !== "card") continue;
+				if (!!card.empty !== (e.key === "cardEmpty")) continue;
+				element(e, cx, cy, card, named[e.key] ? name + "-" : "");
+				named[e.key] = true;
+			}
+			out.push("</g>");
+		});
+		out.push("</g>");
+	}
+	out.push("</g></svg>");
+	return out.join("\n") + "\n";
+}
+
+if (typeof module !== "undefined") {
+	module.exports = { SLOT, ENTRIES, BY_KEY, KEYS, SIZES, toLua, fromLua, CARD_SAMPLES, EMPTY_CARD, ODDS, WOW, cardSamples, textRuns, sampleText, toSVG };
+}
 </script>
 
 <script id="app">
@@ -553,27 +752,12 @@ if (typeof module !== "undefined") module.exports = { ENTRIES, KEYS, toLua, from
 	}
 	function changedKeys() { return KEYS.filter(k => state.values[k].join() !== DEFAULTS[k].join()); }
 
-	// ---------------- sample content ----------------
-	const CARD_SAMPLES = [
-		{ header: { en: "Argent Dawn · daily", de: "Argentumdämmerung · täglich" }, ask: { en: "<span class=c-q3>Blue boots</span>", de: "<span class=c-q3>Stiefel (blau)</span>" },
-			range: { en: "Item level 15-25", de: "Gegenstandsstufe 15-25" }, reward: { en: "2× sale value · +500 rep", de: "2× Verkaufswert · +500 Ruf" }, slot: null },
-		{ header: { en: "Thorium Brotherhood · daily", de: "Thoriumbruderschaft · täglich" }, ask: { en: "<span class=c-q2>Green two-hand weapon</span>", de: "<span class=c-q2>Zweihandwaffe (grün)</span>" },
-			range: { en: "Item level 18-28", de: "Gegenstandsstufe 18-28" }, reward: { en: "4g 12s · +750 rep", de: "4g 12s · +750 Ruf" }, slot: ["i-sword", 2] },
-		{ empty: true },
-		{ header: { en: "Steamwheedle Cartel · weekly", de: "Dampfdruckkartell · wöchentlich" }, ask: { en: "<span class=c-q3>3 blue armour pieces</span>", de: "<span class=c-q3>3 Rüstungsteile (blau)</span>" },
-			range: { en: "Item level 15-25 · 1 of 3 sent", de: "Gegenstandsstufe 15-25 · 1 von 3 geliefert" }, reward: { en: "So far 6g 40s · +2,000 rep", de: "Bisher 6g 40s · +2.000 Ruf" }, slot: null },
-	];
-	const EMPTY_CARD = { en: "No order here. The next daily order arrives in 5 h 12 min.", de: "Hier ist kein Auftrag. Der nächste Tagesauftrag kommt in 5 h 12 min." };
-	const ODDS = [["Break", "Bruch", 20, "#c72921"], ["-1", "-1", 8, "#e6802e"], ["0", "0", 16, "#808080"], ["+1", "+1", 48, "#80d161"], ["+2", "+2", 8, "#299e33"]];
-
 	// ---------------- building the window ----------------
 	const wow = $("wow");
 	let nodes = {}; // key -> [elements]
 
 	function cardList() {
-		const list = CARD_SAMPLES.slice();
-		if (state.cards === 5) list.splice(3, 0, { empty: true });
-		return list;
+		return cardSamples(state.cards);
 	}
 
 	function make(tag, cls, parent) {
@@ -1001,6 +1185,18 @@ if (typeof module !== "undefined") module.exports = { ENTRIES, KEYS, toLua, from
 		const fallback = () => { $("luaOut").focus(); $("luaOut").select(); status("Selected the Lua below: copy it with Ctrl+C (⌘C)."); };
 		if (navigator.clipboard && navigator.clipboard.writeText) {
 			navigator.clipboard.writeText(text).then(() => status("Copied. Paste it over UI/Layout.lua."), fallback);
+		} else fallback();
+	});
+	$("copySvg").addEventListener("click", () => {
+		const svg = toSVG(state.values, state.lang, state.cards);
+		const fallback = () => {
+			$("luaOut").value = svg;
+			$("luaOut").focus();
+			$("luaOut").select();
+			status("Selected the SVG below: copy it with Ctrl+C (⌘C), then paste it into Figma.");
+		};
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(svg).then(() => status("Copied the window as SVG. In Figma, paste it with Ctrl+V (⌘V). To bring changes back, use the Forgeborn Figma plugin."), fallback);
 		} else fallback();
 	});
 	$("showLoad").addEventListener("click", () => { $("loadBox").hidden = false; $("luaIn").focus(); });

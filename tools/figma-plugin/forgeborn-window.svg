@@ -1,0 +1,299 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="804" height="614" viewBox="-12 -12 804 614">
+<g id="window">
+<rect id="window-box" x="0" y="0" width="780" height="590" fill="#1d1914" rx="6" stroke="#6b5631" stroke-width="3"/>
+<g id="decoration">
+<text x="390" y="17" font-family="Marcellus, Georgia, serif" font-size="13" fill="#ffd100" text-anchor="middle">Forgeborn</text>
+<circle cx="23" cy="23" r="31" fill="#3f4348" stroke="#6b5631" stroke-width="3"/>
+<rect x="756" y="3" width="20" height="20" fill="#7a1208" rx="4"/>
+</g>
+<g id="anvil">
+<rect id="anvil-box" x="8" y="60" width="404" height="268" fill="#0d0b09" rx="2" stroke="#3a3022" stroke-width="1"/>
+<g id="nextSwing">
+<rect id="nextSwing-box" x="20" y="70" width="180" height="15" fill="none"/>
+<text x="20" y="81.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="start">
+<tspan x="20">Next swing</tspan>
+</text></g>
+<g id="embers">
+<rect id="embers-box" x="146" y="71" width="150" height="13" fill="none"/>
+<text x="296" y="81.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="end">
+<tspan x="296">Embers 3/7</tspan>
+</text></g>
+<g id="pips">
+<rect id="pips-box" x="302" y="71" width="98" height="12" fill="none"/>
+<circle cx="308.0" cy="77" r="6" fill="#000000" fill-opacity="0.6"/>
+<circle cx="308.0" cy="77" r="4.0" fill="#ff661a"/>
+<circle cx="322.3" cy="77" r="6" fill="#000000" fill-opacity="0.6"/>
+<circle cx="322.3" cy="77" r="4.0" fill="#ff661a"/>
+<circle cx="336.7" cy="77" r="6" fill="#000000" fill-opacity="0.6"/>
+<circle cx="336.7" cy="77" r="4.0" fill="#ff661a"/>
+<circle cx="351.0" cy="77" r="6" fill="#000000" fill-opacity="0.6"/>
+<circle cx="351.0" cy="77" r="4.0" fill="#404040"/>
+<circle cx="365.3" cy="77" r="6" fill="#000000" fill-opacity="0.6"/>
+<circle cx="365.3" cy="77" r="4.0" fill="#404040"/>
+<circle cx="379.7" cy="77" r="6" fill="#000000" fill-opacity="0.6"/>
+<circle cx="379.7" cy="77" r="4.0" fill="#404040"/>
+<circle cx="394.0" cy="77" r="6" fill="#000000" fill-opacity="0.6"/>
+<circle cx="394.0" cy="77" r="4.0" fill="#404040"/>
+</g>
+<g id="odds">
+<rect id="odds-box" x="20" y="92" width="380" height="22" fill="#000000" fill-opacity="0.5"/>
+<rect x="20.0" y="92" width="76.0" height="22" fill="#c72921"/>
+<text x="58.0" y="107" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="middle">20%</text>
+<text x="58.0" y="127" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#8a8a8a" text-anchor="middle">Break</text>
+<rect x="96.0" y="92" width="30.4" height="22" fill="#e6802e"/>
+<text x="111.2" y="107" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="middle">8%</text>
+<text x="111.2" y="127" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#8a8a8a" text-anchor="middle">-1</text>
+<rect x="126.4" y="92" width="60.8" height="22" fill="#808080"/>
+<text x="156.8" y="107" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="middle">16%</text>
+<text x="156.8" y="127" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#8a8a8a" text-anchor="middle">0</text>
+<rect x="187.2" y="92" width="182.4" height="22" fill="#80d161"/>
+<text x="278.4" y="107" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="middle">48%</text>
+<text x="278.4" y="127" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#8a8a8a" text-anchor="middle">+1</text>
+<rect x="369.6" y="92" width="30.4" height="22" fill="#299e33"/>
+<text x="384.8" y="107" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="middle">8%</text>
+<text x="384.8" y="127" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#8a8a8a" text-anchor="middle">+2</text>
+</g>
+<g id="anvilSlot">
+<rect id="anvilSlot-box" x="185" y="144" width="50" height="50" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="anvilSlot-box-icon" x="187" y="146" width="46" height="46" fill="#6b5034" rx="2" stroke="#0070dd" stroke-width="1.5"/>
+</g>
+<g id="itemName">
+<rect id="itemName-box" x="20" y="202" width="380" height="19" fill="none"/>
+<text x="210" y="216.8" font-family="Marcellus, Georgia, serif" font-size="16.5" fill="#ffd100" text-anchor="middle">
+<tspan x="210"><tspan fill="#0070dd">Tattered</tspan><tspan fill="#0070dd"> </tspan><tspan fill="#0070dd">Boots</tspan><tspan fill="#0070dd"> </tspan><tspan fill="#0070dd">+14</tspan></tspan>
+</text></g>
+<g id="itemInfo">
+<rect id="itemInfo-box" x="20" y="224" width="380" height="13" fill="none"/>
+<text x="210" y="234.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="middle">
+<tspan x="210">Rare · item level 20 · 5 to Epic</tspan>
+</text></g>
+<g id="itemValue">
+<rect id="itemValue-box" x="20" y="240" width="380" height="15" fill="none"/>
+<text x="210" y="251.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffffff" text-anchor="middle">
+<tspan x="210">Value: 2g 56s 78c · after a Hit 3g 8s 14c</tspan>
+</text></g>
+<g id="status">
+<rect id="status-box" x="18" y="260" width="384" height="26" fill="none"/>
+<text x="210" y="270.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffd100" text-anchor="middle">
+<tspan x="210"><tspan fill="#1eff00">Hit:</tspan><tspan fill="#1eff00"> </tspan><tspan fill="#1eff00">+1</tspan><tspan fill="#1eff00">  </tspan><tspan fill="#1eff00">Now</tspan><tspan fill="#1eff00"> </tspan><tspan fill="#0070dd">Rare</tspan><tspan fill="#1eff00">!</tspan></tspan>
+</text></g>
+<g id="forge">
+<rect id="forge-box" x="20" y="286" width="182" height="32" fill="#9e2213" rx="4" stroke="#6b5631" stroke-width="1"/>
+<text x="111" y="307" font-family="Marcellus, Georgia, serif" font-size="15" fill="#ffd100" text-anchor="middle">Forge</text></g>
+<g id="sell">
+<rect id="sell-box" x="218" y="286" width="182" height="32" fill="#7a140b" rx="4" stroke="#6b5631" stroke-width="1"/>
+<text x="309" y="306" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="middle">Sell</text></g>
+</g>
+<g id="storage">
+<rect id="storage-box" x="8" y="332" width="404" height="216" fill="#0d0b09" rx="2" stroke="#3a3022" stroke-width="1"/>
+<g id="workbenchTitle">
+<rect id="workbenchTitle-box" x="20" y="342" width="180" height="15" fill="none"/>
+<text x="20" y="353.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="start">
+<tspan x="20">Workbench</tspan>
+</text></g>
+<g id="workbench">
+<rect id="workbench-box" x="22" y="362" width="169" height="37" fill="none"/>
+<rect id="workbench-1" x="22" y="362" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="workbench-1-icon" x="24" y="364" width="33" height="33" fill="#5b6670" rx="2" stroke="#e8e8e8" stroke-width="1.5"/>
+<rect id="workbench-2" x="66" y="362" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="workbench-2-icon" x="68" y="364" width="33" height="33" fill="#3f5a2a" rx="2" stroke="#1eff00" stroke-width="1.5"/>
+<rect id="workbench-3" x="110" y="362" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="workbench-3-icon" x="112" y="364" width="33" height="33" fill="#3c5978" rx="2" stroke="#0070dd" stroke-width="1.5"/>
+<rect id="workbench-4" x="154" y="362" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+</g>
+<g id="shelfTitle">
+<rect id="shelfTitle-box" x="216" y="342" width="180" height="15" fill="none"/>
+<text x="216" y="353.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="start">
+<tspan x="216">Shelf</tspan>
+</text></g>
+<g id="shelf">
+<rect id="shelf-box" x="218" y="362" width="169" height="37" fill="none"/>
+<rect id="shelf-1" x="218" y="362" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="shelf-1-icon" x="220" y="364" width="33" height="33" fill="#6d7277" rx="2" stroke="#e8e8e8" stroke-width="1.5"/>
+<rect id="shelf-2" x="262" y="362" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="shelf-2-icon" x="264" y="364" width="33" height="33" fill="#e8681a" rx="2" stroke="#0070dd" stroke-width="1.5"/>
+<rect id="shelf-3" x="306" y="362" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="shelf-3-icon" x="308" y="364" width="33" height="33" fill="#8f8670" rx="2" stroke="#e8e8e8" stroke-width="1.5"/>
+<rect id="shelf-4" x="350" y="362" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+</g>
+<g id="suppliesTitle">
+<rect id="suppliesTitle-box" x="20" y="410" width="180" height="15" fill="none"/>
+<text x="20" y="421.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="start">
+<tspan x="20">Supplies</tspan>
+</text></g>
+<g id="supplies">
+<rect id="supplies-box" x="22" y="430" width="81" height="37" fill="none"/>
+<rect id="supplies-1" x="22" y="430" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="supplies-1-icon" x="24" y="432" width="33" height="33" fill="#6f6a61" rx="2" stroke="#e8e8e8" stroke-width="1.5"/>
+<rect id="supplies-2" x="66" y="430" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="supplies-2-icon" x="68" y="432" width="33" height="33" fill="#6f6a61" rx="2" stroke="#e8e8e8" stroke-width="1.5"/>
+</g>
+<g id="newTool">
+<rect id="newTool-box" x="218" y="430" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="newTool-box-icon" x="220" y="432" width="33" height="33" fill="#7fb1dc" rx="2" stroke="#a335ee" stroke-width="1.5"/>
+</g>
+<g id="newToolText">
+<rect id="newToolText-box" x="263" y="430" width="140" height="39" fill="none"/>
+<text x="263" y="440.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="start">
+<tspan x="263">New tool! Drag it onto a </tspan>
+<tspan x="263" dy="13">shelf slot, or right-click</tspan>
+<tspan x="263" dy="13">it.</tspan>
+</text></g>
+<g id="displayTitle">
+<rect id="displayTitle-box" x="20" y="478" width="180" height="15" fill="none"/>
+<text x="20" y="489.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="start">
+<tspan x="20">Display case</tspan>
+</text></g>
+<g id="trophyBonus">
+<rect id="trophyBonus-box" x="250" y="480" width="150" height="13" fill="none"/>
+<text x="400" y="490.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="end">
+<tspan x="400">Trophies: +1.25% sale value</tspan>
+</text></g>
+<g id="display">
+<rect id="display-box" x="22" y="498" width="257" height="37" fill="none"/>
+<rect id="display-1" x="22" y="498" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="display-1-icon" x="24" y="500" width="33" height="33" fill="#9b3fd0" rx="2" stroke="#a335ee" stroke-width="1.5"/>
+<rect id="display-2" x="66" y="498" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="display-2-icon" x="68" y="500" width="33" height="33" fill="#3c5978" rx="2" stroke="#0070dd" stroke-width="1.5"/>
+<rect id="display-3" x="110" y="498" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="display-4" x="154" y="498" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="display-5" x="198" y="498" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="display-6" x="242" y="498" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+</g>
+</g>
+<g id="orders">
+<rect id="orders-box" x="418" y="60" width="354" height="488" fill="#0d0b09" rx="2" stroke="#3a3022" stroke-width="1"/>
+<g id="ordersTitle">
+<rect id="ordersTitle-box" x="430" y="70" width="180" height="15" fill="none"/>
+<text x="430" y="81.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="start">
+<tspan x="430">Crafting orders</tspan>
+</text></g>
+<g id="waiting">
+<rect id="waiting-box" x="610" y="72" width="150" height="13" fill="none"/>
+<text x="760" y="82.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="end">
+<tspan x="760">1 waiting</tspan>
+</text></g>
+<g id="cards">
+<rect id="cards-box" x="428" y="92" width="334" height="356" fill="none"/>
+<g id="card-1">
+<rect id="card-1-box" x="428" y="92" width="334" height="86" fill="#0d0b09" rx="2" stroke="#3a3022" stroke-width="1"/>
+<g id="cardHeader">
+<rect id="cardHeader-box" x="438" y="100" width="260" height="13" fill="none"/>
+<text x="438" y="110.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffd100" text-anchor="start">
+<tspan x="438">Argent Dawn · daily</tspan>
+</text></g>
+<g id="cardAsk">
+<rect id="cardAsk-box" x="438" y="116" width="270" height="15" fill="none"/>
+<text x="438" y="127.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffffff" text-anchor="start">
+<tspan x="438"><tspan fill="#0070dd">Blue</tspan><tspan fill="#0070dd"> </tspan><tspan fill="#0070dd">boots</tspan></tspan>
+</text></g>
+<g id="cardRange">
+<rect id="cardRange-box" x="438" y="134" width="270" height="13" fill="none"/>
+<text x="438" y="144.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="start">
+<tspan x="438">Item level 15-25</tspan>
+</text></g>
+<g id="cardReward">
+<rect id="cardReward-box" x="438" y="150" width="156" height="26" fill="none"/>
+<text x="438" y="160.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="start">
+<tspan x="438">2× sale value · +500 rep</tspan>
+</text></g>
+<g id="cardSlot">
+<rect id="cardSlot-box" x="715" y="100" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+</g>
+<g id="cardSend">
+<rect id="cardSend-box" x="600" y="148" width="74" height="22" fill="#7a140b" rx="4" stroke="#6b5631" stroke-width="1"/>
+<text x="637" y="163" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="middle">Send</text></g>
+<g id="cardReject">
+<rect id="cardReject-box" x="678" y="148" width="74" height="22" fill="#7a140b" rx="4" stroke="#6b5631" stroke-width="1"/>
+<text x="715" y="163" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="middle">Reject</text></g>
+</g>
+<g id="card-2">
+<rect id="card-2-box" x="428" y="182" width="334" height="86" fill="#0d0b09" rx="2" stroke="#3a3022" stroke-width="1"/>
+<g id="card-2-cardHeader">
+<rect id="card-2-cardHeader-box" x="438" y="190" width="260" height="13" fill="none"/>
+<text x="438" y="200.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffd100" text-anchor="start">
+<tspan x="438">Thorium Brotherhood · daily</tspan>
+</text></g>
+<g id="card-2-cardAsk">
+<rect id="card-2-cardAsk-box" x="438" y="206" width="270" height="15" fill="none"/>
+<text x="438" y="217.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffffff" text-anchor="start">
+<tspan x="438"><tspan fill="#1eff00">Green</tspan><tspan fill="#1eff00"> </tspan><tspan fill="#1eff00">two-hand</tspan><tspan fill="#1eff00"> </tspan><tspan fill="#1eff00">weapon</tspan></tspan>
+</text></g>
+<g id="card-2-cardRange">
+<rect id="card-2-cardRange-box" x="438" y="224" width="270" height="13" fill="none"/>
+<text x="438" y="234.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="start">
+<tspan x="438">Item level 18-28</tspan>
+</text></g>
+<g id="card-2-cardReward">
+<rect id="card-2-cardReward-box" x="438" y="240" width="156" height="26" fill="none"/>
+<text x="438" y="250.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="start">
+<tspan x="438">4g 12s · +750 rep</tspan>
+</text></g>
+<g id="card-2-cardSlot">
+<rect id="card-2-cardSlot-box" x="715" y="190" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+<rect id="card-2-cardSlot-box-icon" x="717" y="192" width="33" height="33" fill="#5b6670" rx="2" stroke="#1eff00" stroke-width="1.5"/>
+</g>
+<g id="card-2-cardSend">
+<rect id="card-2-cardSend-box" x="600" y="238" width="74" height="22" fill="#7a140b" rx="4" stroke="#6b5631" stroke-width="1"/>
+<text x="637" y="253" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="middle">Send</text></g>
+<g id="card-2-cardReject">
+<rect id="card-2-cardReject-box" x="678" y="238" width="74" height="22" fill="#7a140b" rx="4" stroke="#6b5631" stroke-width="1"/>
+<text x="715" y="253" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="middle">Reject</text></g>
+</g>
+<g id="card-3">
+<rect id="card-3-box" x="428" y="272" width="334" height="86" fill="#0d0b09" rx="2" stroke="#3a3022" stroke-width="1"/>
+<g id="cardEmpty">
+<rect id="cardEmpty-box" x="440" y="302" width="310" height="30" fill="none"/>
+<text x="595" y="313.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#8a8a8a" text-anchor="middle">
+<tspan x="595">No order here. The next daily order arrives in 5 </tspan>
+<tspan x="595" dy="15">h 12 min.</tspan>
+</text></g>
+</g>
+<g id="card-4">
+<rect id="card-4-box" x="428" y="362" width="334" height="86" fill="#0d0b09" rx="2" stroke="#3a3022" stroke-width="1"/>
+<g id="card-4-cardHeader">
+<rect id="card-4-cardHeader-box" x="438" y="370" width="260" height="13" fill="none"/>
+<text x="438" y="380.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffd100" text-anchor="start">
+<tspan x="438">Steamwheedle Cartel · weekly</tspan>
+</text></g>
+<g id="card-4-cardAsk">
+<rect id="card-4-cardAsk-box" x="438" y="386" width="270" height="15" fill="none"/>
+<text x="438" y="397.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffffff" text-anchor="start">
+<tspan x="438"><tspan fill="#0070dd">3</tspan><tspan fill="#0070dd"> </tspan><tspan fill="#0070dd">blue</tspan><tspan fill="#0070dd"> </tspan><tspan fill="#0070dd">armour</tspan><tspan fill="#0070dd"> </tspan><tspan fill="#0070dd">pieces</tspan></tspan>
+</text></g>
+<g id="card-4-cardRange">
+<rect id="card-4-cardRange-box" x="438" y="404" width="270" height="13" fill="none"/>
+<text x="438" y="414.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="start">
+<tspan x="438">Item level 15-25 · 1 of 3 sent</tspan>
+</text></g>
+<g id="card-4-cardReward">
+<rect id="card-4-cardReward-box" x="438" y="420" width="156" height="26" fill="none"/>
+<text x="438" y="430.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#ffffff" text-anchor="start">
+<tspan x="438">So far 6g 40s · +2,000 rep</tspan>
+</text></g>
+<g id="card-4-cardSlot">
+<rect id="card-4-cardSlot-box" x="715" y="370" width="37" height="37" fill="#15120f" rx="3" stroke="#34302a" stroke-width="1"/>
+</g>
+<g id="card-4-cardSend">
+<rect id="card-4-cardSend-box" x="600" y="418" width="74" height="22" fill="#7a140b" rx="4" stroke="#6b5631" stroke-width="1"/>
+<text x="637" y="433" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="middle">Send</text></g>
+<g id="card-4-cardReject">
+<rect id="card-4-cardReject-box" x="678" y="418" width="74" height="22" fill="#7a140b" rx="4" stroke="#6b5631" stroke-width="1"/>
+<text x="715" y="433" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="middle">Reject</text></g>
+</g>
+</g>
+</g>
+<g id="gold">
+<rect id="gold-box" x="18" y="560" width="240" height="15" fill="none"/>
+<text x="18" y="571.7" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="start">
+<tspan x="18">Addon gold: <tspan fill="#ffffff">12g</tspan><tspan fill="#ffffff"> </tspan><tspan fill="#ffffff">40s</tspan><tspan fill="#ffffff"> </tspan><tspan fill="#ffffff">18c</tspan></tspan>
+</text></g>
+<g id="shopHint">
+<rect id="shopHint-box" x="398" y="561" width="250" height="13" fill="none"/>
+<text x="648" y="571.1" font-family="Marcellus, Georgia, serif" font-size="10.5" fill="#8a8a8a" text-anchor="end">
+<tspan x="648">Lockboxes, one-use items, reputation</tspan>
+</text></g>
+<g id="shop">
+<rect id="shop-box" x="658" y="556" width="110" height="24" fill="#7a140b" rx="4" stroke="#6b5631" stroke-width="1"/>
+<text x="713" y="572" font-family="Marcellus, Georgia, serif" font-size="12.5" fill="#ffd100" text-anchor="middle">Shop</text></g>
+</g></svg>

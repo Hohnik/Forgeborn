@@ -65,3 +65,28 @@ T.test("the window is built where the layout says", function()
 	T.eq(parts.bench[3].__points.TOPLEFT[3], 10 + 2 * 50, "the third Workbench slot, two steps along")
 	T.eq(parts.bench[3].__points.TOPLEFT[4], -40)
 end)
+
+T.test("the Figma plugin and its SVG are built from the current layout (node tools/figma-plugin/build.js)", function()
+	local code = read("tools/figma-plugin/code.js")
+	local html = read("tools/layout-editor/index.html")
+	local core = html:match('<script id="core">\n(.-)</script>')
+	T.ok(core and code:find(core, 1, true), "code.js holds the layout editor's core")
+	local lua = read("UI/Layout.lua")
+	local json = '"' .. lua:gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n"):gsub("\t", "\\t") .. '"'
+	T.ok(code:find("var DEFAULT_LUA = " .. json .. ";", 1, true), "code.js holds UI/Layout.lua")
+	-- The SVG's layout boxes sit where the layout says (window coordinates).
+	local svg = read("tools/figma-plugin/forgeborn-window.svg")
+	local ns = T.loadAddonFiles({ "UI/Layout.lua" })
+	local L = ns.Layout
+	local function box(key, x, y, w, h)
+		local pattern = string.format('id="%s-box" x="%s" y="%s" width="%s" height="%s"', key, x, y, w, h)
+		T.ok(svg:find(pattern, 1, true), "SVG: " .. pattern)
+	end
+	box("window", 0, 0, L.window[1], L.window[2])
+	for _, key in ipairs({ "anvil", "storage", "orders", "shop" }) do
+		box(key, L[key][1], L[key][2], L[key][3], L[key][4])
+	end
+	for _, key in ipairs({ "odds", "forge", "sell" }) do
+		box(key, L.anvil[1] + L[key][1], L.anvil[2] + L[key][2], L[key][3], L[key][4])
+	end
+end)

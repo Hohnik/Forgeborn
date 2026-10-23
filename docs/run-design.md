@@ -1,6 +1,6 @@
 # Forgeborn as a run: the forge fee
 
-Oct 23, 2026 · proposal for rules v0.5, nothing built yet
+Oct 23, 2026 · rules v0.5, accepted in principle on 23 Oct 2026 (decisions 1 to 3 below), nothing built yet
 
 The idea: the forge isn't yours. Its owner charges a **forge fee every 3 crafts**, and the fee rises. Pay it from what you sell, spend the rest on tools and better faces for the anvil, and see how far you get. This document says exactly how that game plays, which build layers other games use and how Forgeborn borrows them, and what it means for the addon.
 
@@ -313,11 +313,16 @@ A build order that keeps something playable at every step:
 3. **Variety:** suffixes, consumables, inspections, Ragnaros, the new tools.
 4. **Meta:** unlocks, starting forges, anvil ranks, commissions from loot, the hall of fame.
 
-## Decisions for the designer
+## Decisions
 
-1. **Session game:** go run-based as described, with gold and tools inside the run? (Recommended. The alternative, a fee on top of today's forever economy, has no real stake.)
-2. **The clock:** every 3 crafts (recommended), or every N strikes?
-3. **Missing a fee:** 3 grudges (recommended, like ForgeTax), or the run ends at once (Balatro, CloverPit, Luck be a Landlord)?
+Decided on 23 Oct 2026:
+
+1. **Session game: yes.** Forgeborn becomes run-based; gold and tools live inside the run, unlocks last.
+2. **The clock: every 3 crafts.**
+3. **Missing a fee: 3 grudges and you're out.**
+
+Still open:
+
 4. **Break and faces:** keep Break outside the faces (recommended), or keep v0.4's ForgeTax rule where every added face lowers Break?
 5. **Who collects:** Lokhtos and the Black Anvil, then Ragnaros? Or a dragon, as in ForgeTax?
 6. **Real loot:** commissions as the premium 4th item (recommended), or real loot only?
