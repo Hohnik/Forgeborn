@@ -5,7 +5,7 @@ local T = require("testlib")
 local files = { ... }
 if #files == 0 then
 	files = { "tests/test_rules.lua" }
-	local extra = { "tests/test_game.lua", "tests/test_ui.lua" }
+	local extra = { "tests/test_game.lua", "tests/test_ui.lua", "tests/test_retail.lua" }
 	for _, file in ipairs(extra) do
 		local handle = io.open(file, "r")
 		if handle then

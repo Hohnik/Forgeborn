@@ -8,21 +8,8 @@
 --   local client = Mock.New({ locale = "enUS" })
 --   client:LoadAddon()            -- runs every file in Forgeborn.toc
 --   client:Fire("ADDON_LOADED", "Forgeborn")
-local API = dofile("tests/fixtures/forever_widgets.lua")
-
 local Mock = {}
 Mock.__index = Mock
-
-local function union(lists)
-	local set = {}
-	for _, name in ipairs(lists) do
-		local tbl = assert(API[name], "widget API table missing: " .. name)
-		for method in pairs(tbl) do
-			set[method] = true
-		end
-	end
-	return set
-end
 
 local REGION = { "SimpleObjectAPI", "SimpleFrameScriptObjectAPI", "SimpleScriptRegionAPI", "SimpleScriptRegionResizingAPI", "SimpleAnimatableObjectAPI" }
 local function with(base, extra)
@@ -36,21 +23,41 @@ local function with(base, extra)
 	return list
 end
 
-local ALLOWED = {
-	Frame = union(with(REGION, { "SimpleFrameAPI" })),
-	Button = union(with(REGION, { "SimpleFrameAPI", "SimpleButtonAPI" })),
-	StatusBar = union(with(REGION, { "SimpleFrameAPI", "SimpleStatusBarAPI" })),
-	GameTooltip = union(with(REGION, { "SimpleFrameAPI", "FrameAPITooltip" })),
-	Texture = union(with(REGION, { "SimpleRegionAPI", "SimpleTextureBaseAPI", "SimpleTextureAPI" })),
-	MaskTexture = union(with(REGION, { "SimpleRegionAPI", "SimpleTextureBaseAPI", "SimpleMaskTextureAPI" })),
-	FontString = union(with(REGION, { "SimpleRegionAPI", "SimpleFontStringAPI" })),
-	AnimationGroup = union({ "SimpleObjectAPI", "SimpleFrameScriptObjectAPI", "SimpleAnimGroupAPI" }),
-	Alpha = union({ "SimpleObjectAPI", "SimpleFrameScriptObjectAPI", "SimpleAnimAPI", "SimpleAnimAlphaAPI" }),
-}
-ALLOWED.ItemButton = ALLOWED.Button
--- Tooltip methods the docs leave out but Blizzard's own code calls hundreds of times.
-for _, m in ipairs({ "SetOwner", "AddLine", "AddDoubleLine", "IsOwned", "ClearLines", "NumLines" }) do
-	ALLOWED.GameTooltip[m] = true
+-- The methods each widget type has, from a client's generated widget docs (a fixture file).
+local fixtures = {}
+local function loadWidgets(path)
+	if fixtures[path] then
+		return fixtures[path]
+	end
+	local API = dofile(path)
+	local function union(lists)
+		local set = {}
+		for _, name in ipairs(lists) do
+			local tbl = assert(API[name], "widget API table missing: " .. name)
+			for method in pairs(tbl) do
+				set[method] = true
+			end
+		end
+		return set
+	end
+	local allowed = {
+		Frame = union(with(REGION, { "SimpleFrameAPI" })),
+		Button = union(with(REGION, { "SimpleFrameAPI", "SimpleButtonAPI" })),
+		StatusBar = union(with(REGION, { "SimpleFrameAPI", "SimpleStatusBarAPI" })),
+		GameTooltip = union(with(REGION, { "SimpleFrameAPI", "FrameAPITooltip" })),
+		Texture = union(with(REGION, { "SimpleRegionAPI", "SimpleTextureBaseAPI", "SimpleTextureAPI" })),
+		MaskTexture = union(with(REGION, { "SimpleRegionAPI", "SimpleTextureBaseAPI", "SimpleMaskTextureAPI" })),
+		FontString = union(with(REGION, { "SimpleRegionAPI", "SimpleFontStringAPI" })),
+		AnimationGroup = union({ "SimpleObjectAPI", "SimpleFrameScriptObjectAPI", "SimpleAnimGroupAPI" }),
+		Alpha = union({ "SimpleObjectAPI", "SimpleFrameScriptObjectAPI", "SimpleAnimAPI", "SimpleAnimAlphaAPI" }),
+	}
+	allowed.ItemButton = allowed.Button
+	-- Tooltip methods the docs leave out but Blizzard's own code calls hundreds of times.
+	for _, m in ipairs({ "SetOwner", "AddLine", "AddDoubleLine", "IsOwned", "ClearLines", "NumLines" }) do
+		allowed.GameTooltip[m] = true
+	end
+	fixtures[path] = { allowed = allowed, soundkit = API.__soundkit }
+	return fixtures[path]
 end
 
 local POINTS = { TOPLEFT = true, TOP = true, TOPRIGHT = true, LEFT = true, CENTER = true, RIGHT = true, BOTTOMLEFT = true, BOTTOM = true, BOTTOMRIGHT = true }
@@ -340,7 +347,7 @@ local regionMeta = {}
 regionMeta.__index = function(self, key)
 	local kind = rawget(self, "__mockType")
 	local impl = IMPL[key]
-	local allowed = ALLOWED[kind]
+	local allowed = rawget(self, "__client").widgets.allowed[kind]
 	if allowed and allowed[key] then
 		if impl then
 			return impl
@@ -470,6 +477,8 @@ function Mock.New(options)
 	self.level = options.level or 20
 	self.race = options.race or "Human"
 	self.project = options.project or "forever" -- or "retail"
+	-- Widget methods and sound names of the client being mocked.
+	self.widgets = loadWidgets(options.widgets or "tests/fixtures/forever_widgets.lua")
 	self.avgItemLevel = options.avgItemLevel or 650
 	self.identityRestricted = false -- while true, UnitRace returns a secret value
 	self.items = {}
@@ -707,7 +716,7 @@ function Mock:BuildEnv(options)
 
 	env.SOUNDKIT = setmetatable({}, {
 		__index = function(_, key)
-			if API.__soundkit[key] then
+			if client.widgets.soundkit[key] then
 				return 1000
 			end
 			error("SOUNDKIT has no " .. tostring(key), 2)
