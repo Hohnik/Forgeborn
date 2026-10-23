@@ -1,10 +1,10 @@
-## Interface: 16001
-## Title: Forgeborn
-## Notes: A push-your-luck forge for the weapons and armour you loot.
-## Notes-deDE: Eine Glücksspiel-Schmiede für die Waffen und Rüstungen, die du erbeutest.
+## Interface: 120105
+## Title: Forgeborn |cffff8000(retail test)|r
+## Notes: Test build of Forgeborn for retail WoW, to test the addon before WoW Forever launches. Test commands: /forge test
+## Notes-deDE: Testversion von Forgeborn für Retail-WoW, um das Addon vor dem Start von WoW Forever zu testen. Testbefehle: /forge test
 ## Author: Hohnik
-## Version: 1.0.1
-## AllowLoadGameType: camelot
+## Version: 1.0.1-retail-test
+## AllowLoadGameType: standard
 ## SavedVariablesPerCharacter: ForgebornCharDB
 ## IconTexture: Interface\Icons\Trade_BlackSmithing
 ## AddonCompartmentFunc: Forgeborn_OnCompartmentClick
@@ -28,3 +28,4 @@ UI\Orders.lua
 UI\Shop.lua
 UI\Options.lua
 Core.lua
+TestTools.lua

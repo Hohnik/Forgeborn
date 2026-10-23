@@ -1,5 +1,9 @@
 # Forgeborn
 
+> **Branch `retail-test`:** a test build for retail WoW (12.1.5), the live client closest to WoW Forever.
+> It runs the same code as `main` (the Forever release) plus test commands (`/forge test`).
+> Install, differences and checklist: [docs/retail-testing.md](docs/retail-testing.md).
+
 A push-your-luck forging minigame addon for **World of Warcraft: Forever**.
 
 You put a copy of an item you really looted on the anvil and strike it up the
