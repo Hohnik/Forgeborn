@@ -307,6 +307,7 @@ Loot enters from bag events, the engine owns all rules, and everything is kept i
 ## AddonCompartmentFuncOnLeave: Forgeborn_OnCompartmentLeave
 Locales.lua
 Data.lua
+Compat.lua
 Rules.lua
 Util.lua
 Database.lua
@@ -327,6 +328,7 @@ Core.lua
 | File | Job |
 | --- | --- |
 | `Data.lua` | Every number: bags, value factors, tools and their rarity steps, lockboxes, factions and wares, order settings. No WoW API calls. |
+| `Compat.lua` | The few differences between Forever and retail WoW, so the retail test build (branch `retail-test`) runs the same code. |
 | `Rules.lua` | Bags with tools, draws, safe swings, Frenzy, cracks, breaks, value. No WoW API calls, so it runs in plain Lua. |
 | `Locales.lua` | English and German text. Item names come from the client when it has them, in any language. |
 | `Database.lua` | Saved data per character, defaults, and repair of damaged data. |
@@ -430,7 +432,7 @@ Without tools, selling at once stays the best play from blue up, as the playtest
 
 ### Tests
 
-- `lua5.1 tests/run.lua`: 89 tests. The rules engine against the tables above and the Python playtest numbers; the game logic and the window inside a strict mock of the client, in English and German.
+- `lua5.1 tests/run.lua`: 103 tests. The rules engine against the tables above and the Python playtest numbers; the game logic and the window inside a strict mock of the client, in English and German, as Forever and as the retail test build.
 - `luacheck .`: no undefined globals and no unused variables.
 - `python3 tools/apicheck/check_api.py`: every global, `C_` function, template, font, atlas, texture, sound and event the addon uses exists in Blizzard's UI source for Forever.
 

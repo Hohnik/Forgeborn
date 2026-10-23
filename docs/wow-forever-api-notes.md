@@ -274,6 +274,7 @@ Found while building the addon (22 Oct 2026), by reading the Forever UI source:
 - **Tabs:** `PanelTabButtonTemplate` has `parentArray="Tabs"`. `PanelTemplates_SetNumTabs`, `PanelTemplates_SetTab` and `PanelTemplates_TabResize(tab, padding, nil, minWidth, maxWidth)` find tabs through `frame.Tabs[i]` or, without that table, the global `<FrameName>Tab<i>`; naming tabs that way works in both cases. The tab's `OnShow` reads `parent.maxTabWidth`.
 - **Loot functions** (`GetNumLootItems`, `GetLootSlotType`, `GetLootSlotLink`, `GetLootSlotInfo`) are not in the generated docs but Forever's loot frame calls them, so they exist.
 - **Item GUIDs** (`C_Item.GetItemGUID(ItemLocation:CreateFromBagAndSlot(bag, slot))`) are plain values, not secret, so a bag scan can compare them.
+- **`UnitRace` returns secret values** while unit identity is restricted (`SecretWhenUnitIdentityRestricted`, e.g. boss encounters), in Forever as in retail. A secret can't be used as a table key or compared; test with `issecretvalue(value)` first, or read the race at login and keep it. Of every API Forgeborn uses, it is the only one with a secret return.
 - **Sounds:** Forever loads the Mainline `SoundKitConstants.lua`. `IG_ABILITY_ICON_PICKUP` doesn't exist; `UI_CURSOR_PICKUP_OBJECT` and `IG_ABILITY_ICON_DROP` do.
 
 ## 8. Where to read more

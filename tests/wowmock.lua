@@ -469,6 +469,9 @@ function Mock.New(options)
 	self.locale = options.locale or "enUS"
 	self.level = options.level or 20
 	self.race = options.race or "Human"
+	self.project = options.project or "forever" -- or "retail"
+	self.avgItemLevel = options.avgItemLevel or 650
+	self.identityRestricted = false -- while true, UnitRace returns a secret value
 	self.items = {}
 	self.bags = { [0] = {}, [1] = {}, [2] = {}, [3] = {}, [4] = {} }
 	self.bagSize = { [0] = 16, [1] = 0, [2] = 0, [3] = 0, [4] = 0 }
@@ -658,7 +661,31 @@ function Mock:BuildEnv(options)
 	env.time = function() return client.now end
 	env.GetLocale = function() return client.locale end
 	env.UnitLevel = function(unit) assert(unit == "player") return client.level end
-	env.UnitRace = function() return client.race, client.race end
+	-- A secret value: any use but issecretvalue() fails, like in the client.
+	local SECRET = setmetatable({}, {
+		__index = function() error("attempt to index a secret value", 2) end,
+		__tostring = function() error("attempt to use a secret value", 2) end,
+		__concat = function() error("attempt to concatenate a secret value", 2) end,
+		__eq = function() error("attempt to compare a secret value", 2) end,
+	})
+	client.secretValue = SECRET
+	env.issecretvalue = function(v) return v == nil and false or rawequal(v, SECRET) end
+	env.UnitRace = function()
+		if client.identityRestricted then
+			client.secretRaceRead = true
+			return SECRET, SECRET, SECRET
+		end
+		return client.race, client.race
+	end
+	if client.project == "retail" then
+		env.WOW_PROJECT_MAINLINE, env.WOW_PROJECT_CLASSIC = 1, 2
+		env.WOW_PROJECT_ID = 1
+		env.GetAverageItemLevel = function() return client.avgItemLevel + 3, client.avgItemLevel, client.avgItemLevel end
+	else
+		env.WOW_PROJECT_MAINLINE, env.WOW_PROJECT_CLASSIC, env.WOW_PROJECT_CAMELOT = 1, 2, 18
+		env.WOW_PROJECT_ID = 18
+		env.GetAverageItemLevel = function() return 22, 21, 21 end
+	end
 	env.UnitFactionGroup = function() return "Alliance", "Alliance" end
 	env.GetMaxLevelForPlayerExpansion = function() return 60 end
 	env.InCombatLockdown = function() return client.combat end
@@ -695,6 +722,9 @@ function Mock:BuildEnv(options)
 		assert(kind == "Frame" or kind == "Button" or kind == "ItemButton" or kind == "StatusBar", "unknown frame type " .. tostring(kind))
 		assert(parent == nil or isRegion(parent), "bad parent")
 		assert(template == nil or TEMPLATES[template], "template not modelled by the mock: " .. tostring(template))
+		if template == "ColoredProgressBarTemplate" and client.project ~= "forever" then
+			error("CreateFrame(): Couldn't find inherited node \"ColoredProgressBarTemplate\"")
+		end
 		local f = client:NewRegion(kind, name, parent)
 		if kind == "ItemButton" then
 			itemButton(client, f)

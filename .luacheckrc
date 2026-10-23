@@ -22,6 +22,7 @@ read_globals = {
 	"PanelTemplates_TabResize", "PlaySound", "SOUNDKIT", "SetItemButtonCount", "SetItemButtonDesaturated",
 	"SetItemButtonQuality", "SetItemButtonTexture", "Settings", "ShowUIPanel", "StaticPopup_Show", "UIErrorsFrame",
 	"UIParent", "UnitFactionGroup", "UnitLevel", "UnitRace", "YES", "strtrim",
+	"GetAverageItemLevel", "WOW_PROJECT_ID", "WOW_PROJECT_CAMELOT", "WOW_PROJECT_MAINLINE", "issecretvalue",
 }
 
 files["tests"] = { ignore = { "1..", "212" } }

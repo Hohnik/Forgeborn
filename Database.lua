@@ -238,6 +238,15 @@ function DB.Repair(db)
 	end
 	db.stats = stats
 
+	-- The capital city, saved once it is known (see ns.CityKey).
+	local cities = {}
+	for _, city in pairs(Data.CITY_BY_RACE) do
+		cities[city] = true
+	end
+	if not cities[db.city] then
+		db.city = nil
+	end
+
 	local settings = type(db.settings) == "table" and db.settings or {}
 	db.settings = {
 		sound = settings.sound ~= false,

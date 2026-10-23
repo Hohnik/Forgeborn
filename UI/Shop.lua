@@ -296,13 +296,16 @@ local function buildRow(parent, index)
 end
 
 local function createBar(parent)
-	-- Forever's own progress bar (as in its Reputation window); a plain status bar if it can't be made.
-	local ok, bar = pcall(CreateFrame, "Frame", nil, parent, "ColoredProgressBarTemplate")
-	if ok and bar and bar.SetFillPercent then
-		bar:SetSize(300, 29)
-		return bar
+	-- Forever's own progress bar (as in its Reputation window). Retail has no such template, so the retail
+	-- test build uses a plain status bar with the same two methods.
+	if ns.Compat.hasColoredProgressBar then
+		local ok, bar = pcall(CreateFrame, "Frame", nil, parent, "ColoredProgressBarTemplate")
+		if ok and bar and bar.SetFillPercent then
+			bar:SetSize(300, 29)
+			return bar
+		end
 	end
-	bar = CreateFrame("StatusBar", nil, parent)
+	local bar = CreateFrame("StatusBar", nil, parent)
 	bar:SetSize(290, 16)
 	bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
 	bar:SetMinMaxValues(0, 1)

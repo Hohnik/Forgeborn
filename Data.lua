@@ -180,6 +180,7 @@ Data.WEEKLY_GOLD_FACTOR = 4
 Data.STEP_BONUS = 0.5 -- per quality step above the ask
 Data.REJECT_SHARE = 0.25
 Data.ILVL_RANGE = 5
+Data.ILVL_RANGE_RETAIL = 10 -- retail test build: around the average equipped item level
 Data.PLATE_LEVEL = 40
 
 -- Equipment groups an order can ask for. Armour slots listed in "typed" can also carry an armour type.

@@ -24,6 +24,13 @@ Forever launches on 4 Nov 2026. If the client says the addon is out of date, the
 interface number differs from `16001`; tick "Load out of date AddOns" or update
 `## Interface` in `Forgeborn.toc`.
 
+### Testing before launch: branch `retail-test`
+
+Retail WoW (Midnight, 12.1.5) is the closest live client to Forever: it shares 97% of the API functions,
+93% of the UI templates, 98% of the events and 99% of the sound names Forever has; the Classic clients share
+30–80% (measured with `tools/apicheck` against Blizzard's UI source for each client). The branch
+[`retail-test`](../../tree/retail-test) runs the same addon code in retail, with test commands and a checklist.
+
 ## Install
 
 Copy this repository into the `Interface/AddOns` folder of your WoW Forever installation
@@ -66,7 +73,7 @@ Commands: `/forge` (open the window), `/forge shop`, `/forge records`, `/forge s
 Lua 5.1 (the game's Lua version), [luacheck](https://github.com/lunarmodules/luacheck) and Python 3:
 
 ```sh
-lua5.1 tests/run.lua                 # 89 tests: rules, game logic and the window
+lua5.1 tests/run.lua                 # 103 tests: rules, game logic and the window
 luacheck .                           # no undefined globals, no unused variables
 python3 tools/apicheck/check_api.py  # every Blizzard API the addon uses exists in Forever
 ```
@@ -75,7 +82,8 @@ python3 tools/apicheck/check_api.py  # every Blizzard API the addon uses exists 
   playtest numbers, including the balance goals.
 - `tests/test_game.lua` and `tests/test_ui.lua` load every file of `Forgeborn.toc` into a
   strict mock of the client (`tests/wowmock.lua`) and play it: loot, the anvil, orders,
-  the Shop, drag and drop, menus, popups, combat, settings, in English and German.
+  the Shop, drag and drop, menus, popups, combat, settings, in English and German, and once
+  as the retail test build.
   Widgets only have the methods the Forever client documents; anything else fails.
 - `check_api.py` checks every global, `C_` function, template, font, atlas, texture,
   sound and event against Blizzard's UI source for Forever. Its lists are built by
@@ -120,6 +128,7 @@ python3 ev_per_swing.py   # expected value of one more swing per quality
 ```
 Forgeborn.toc    the addon (loads only in WoW Forever)
 *.lua            rules engine, saved data, economy, orders, loot detection, events
+Compat.lua       the few differences between Forever and retail (for the retail test build)
 UI/              the window, the order cards, the Shop, the settings page
 tests/           test runner, strict client mock, tests
 tools/apicheck/  API existence check against Blizzard's Forever UI source

@@ -12,7 +12,8 @@ import subprocess
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-FIXTURE = os.path.join(ROOT, "tools", "apicheck", "forever_api.txt.gz")
+# Another client's list can be checked with: check_api.py path/to/api.txt.gz
+FIXTURE = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "tools", "apicheck", "forever_api.txt.gz")
 
 
 def addon_files():
@@ -34,12 +35,17 @@ def load_sets():
 
 
 # Functions of WoW's Lua environment (the C side), not in the generated docs or Blizzard's Lua.
+# issecretvalue: the secret-value test, called 25 times by Forever's own UI code.
 LUA_ENVIRONMENT = {"strtrim", "strsplit", "tinsert", "tremove", "wipe", "format", "date", "time",
-                   "issecure", "securecall", "hooksecurefunc", "Enum"}
+                   "issecure", "securecall", "hooksecurefunc", "Enum", "issecretvalue"}
+
+# Used only when the addon runs in WoW Forever (see Compat.lua), so another client may lack them.
+FOREVER_ONLY = {"ColoredProgressBarTemplate", "WOW_PROJECT_CAMELOT"}
 
 
 def main():
     sets, version = load_sets()
+    forever = version.startswith("1.60")
     namespaces = {name: sets.get("ns:" + name, set()) for name in sets["namespace"]}
     # Defined in Blizzard's Lua or XML, documented, or called/read by Blizzard's own code.
     known_globals = (sets["globalFunctions"] | sets["luaGlobals"] | sets["calledGlobals"]
@@ -57,7 +63,7 @@ def main():
     used = set(re.findall(r"\(W11[123]\) (?:accessing undefined|setting non-standard global|mutating non-standard global) variable '?(\w+)'?", out))
     used |= set(re.findall(r"variable '(\w+)'", out))
     for name in sorted(used - own):
-        if name not in known_globals:
+        if name not in known_globals and not (name in FOREVER_ONLY and not forever):
             problems.append("global " + name)
 
     # 2. C_ namespace functions.
@@ -70,7 +76,7 @@ def main():
     for f, src in sources.items():
         base = os.path.basename(f)
         for t in re.findall(r'"(\w+Template)"', src):
-            if t not in sets["templates"]:
+            if t not in sets["templates"] and not (t in FOREVER_ONLY and not forever):
                 problems.append("template %s (%s)" % (t, base))
         for font in re.findall(r'"((?:GameFont|NumberFont|SystemFont)\w*)"', src):
             if font not in sets["fonts"]:

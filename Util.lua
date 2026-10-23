@@ -111,11 +111,26 @@ function ns.RankName(rank)
 end
 
 -- The capital city of this character's race (or faction).
+-- UnitRace returns a secret value while unit identity is restricted (boss encounters), and a secret can't be
+-- used as a table key. So the city is worked out once, outside restrictions (at login), and saved.
+local cityKey
+
 function ns.CityKey()
+	if cityKey then
+		return cityKey
+	end
 	local _, raceFile = UnitRace("player")
-	local city = raceFile and Data.CITY_BY_RACE[raceFile]
+	local secret = issecretvalue ~= nil and issecretvalue(raceFile)
+	if secret then
+		return ns.db and ns.db.city or Data.CITY_BY_FACTION[UnitFactionGroup("player") or ""] or "STORMWIND"
+	end
+	local city = type(raceFile) == "string" and Data.CITY_BY_RACE[raceFile] or nil
 	if not city then
 		city = Data.CITY_BY_FACTION[UnitFactionGroup("player") or ""] or "STORMWIND"
+	end
+	cityKey = city
+	if ns.db then
+		ns.db.city = city
 	end
 	return city
 end

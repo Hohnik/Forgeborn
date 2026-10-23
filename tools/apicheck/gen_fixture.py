@@ -15,9 +15,11 @@ import re
 import sys
 
 root = sys.argv[1]
+# Optional: a folder to write both fixtures to (default: their places in the repository).
+out_dir = sys.argv[2] if len(sys.argv) > 2 else None
 here = os.path.dirname(os.path.abspath(__file__))
-widget_path = os.path.join(here, "..", "..", "tests", "fixtures", "forever_widgets.lua")
-api_path = os.path.join(here, "forever_api.txt.gz")
+widget_path = os.path.join(out_dir, "widgets.lua") if out_dir else os.path.join(here, "..", "..", "tests", "fixtures", "forever_widgets.lua")
+api_path = os.path.join(out_dir, "api.txt.gz") if out_dir else os.path.join(here, "forever_api.txt.gz")
 docs = os.path.join(root, "Blizzard_APIDocumentationGenerated")
 
 widget = {}      # doc table name -> set of method names (ScriptObject docs)
@@ -83,8 +85,14 @@ for dirpath, _, files in os.walk(root):
             atlases.update(re.findall(r'key="\w*[Aa]tlas\w*" value="([\w\-]+)"', text))
 
 soundkit = set()
-sk = open(os.path.join(root, "Blizzard_SharedXML", "Mainline", "SoundKitConstants.lua"), encoding="utf-8").read()
-soundkit.update(re.findall(r'^\t(\w+)\s*=\s*\d+', sk, re.M))
+# Mainline clients (Forever, retail) load Mainline/SoundKitConstants.lua; Classic clients load their own.
+sk_dir = os.path.join(root, "Blizzard_SharedXML")
+sk_paths = [os.path.join(sk_dir, "Mainline", "SoundKitConstants.lua")]
+if not os.path.exists(sk_paths[0]):
+    sk_paths = sorted(os.path.join(d, "SoundKitConstants.lua") for d, _, f in os.walk(sk_dir) if "SoundKitConstants.lua" in f)
+for sk_path in sk_paths:
+    sk = open(sk_path, encoding="utf-8").read()
+    soundkit.update(re.findall(r'^\t(\w+)\s*=\s*\d+', sk, re.M))
 
 def lua_set(name, values):
     items = ",".join('["%s"]=true' % v for v in sorted(values))

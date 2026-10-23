@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 (23 Oct 2026)
+
+- Fix: the capital city faction no longer reads the character's race during boss encounters, where
+  `UnitRace` returns a secret value. The city is worked out at login and saved.
+- `Compat.lua`: the few differences between WoW Forever and retail WoW (the progress bar template and the
+  item levels orders ask for), so the retail test build in branch `retail-test` runs the same code.
+
 ## 1.0.0 (22 Oct 2026)
 
 First version of the addon, built from the design writeup (rules v0.3).

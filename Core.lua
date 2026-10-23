@@ -36,6 +36,7 @@ function handlers.ADDON_LOADED(name)
 end
 
 function handlers.PLAYER_LOGIN()
+	ns.CityKey() -- works out the capital city while no restriction is active
 	ns.RequestItemNames()
 	ns.Orders.Check()
 	ns.Orders.Schedule(onOrdersChanged)

@@ -3,7 +3,7 @@
 ## Notes: A push-your-luck forge for the weapons and armour you loot.
 ## Notes-deDE: Eine Glücksspiel-Schmiede für die Waffen und Rüstungen, die du erbeutest.
 ## Author: Hohnik
-## Version: 1.0.0
+## Version: 1.0.1
 ## AllowLoadGameType: camelot
 ## SavedVariablesPerCharacter: ForgebornCharDB
 ## IconTexture: Interface\Icons\Trade_BlackSmithing
@@ -14,6 +14,7 @@
 
 Locales.lua
 Data.lua
+Compat.lua
 Rules.lua
 Util.lua
 Database.lua

@@ -126,13 +126,14 @@ function Orders.Generate(weekly, faction)
 		group = ask.group,
 		armorType = ask.armorType,
 		minQuality = pickWeighted(weights, { 1, 2, 3, 4 }),
-		ilvlMin = max(1, playerLevel - Data.ILVL_RANGE),
-		ilvlMax = playerLevel < Orders.MaxPlayerLevel() and playerLevel + Data.ILVL_RANGE or nil,
+		ilvlMin = 1,
+		ilvlMax = nil,
 		count = weekly and Data.WEEKLY_COUNT or 1,
 		sent = 0,
 		gold = 0,
 		rep = 0,
 	}
+	order.ilvlMin, order.ilvlMax = ns.Compat.OrderItemLevels(playerLevel, Orders.MaxPlayerLevel())
 	db.orders.nextID = db.orders.nextID + 1
 	return order
 end

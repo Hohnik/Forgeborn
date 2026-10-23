@@ -56,12 +56,12 @@ local function hoverAll(client, parts)
 	client:RunScript(parts.odds.bar, "OnEnter")
 end
 
-local function scenario(locale)
-	local prefix = "[" .. locale .. "] "
+local function scenario(locale, project)
+	local prefix = "[" .. locale .. (project and (", " .. project) or "") .. "] "
 	local client, ns, env, L, parts
 
 	T.test(prefix .. "the window opens like a native panel and shows an empty anvil", function()
-		client = newClient({ locale = locale })
+		client = newClient({ locale = locale, project = project })
 		client:Login(nil)
 		ns, env, L = client.ns, client.env, client.ns.L
 		env.SlashCmdList.FORGEBORN("")
@@ -397,6 +397,8 @@ end
 
 scenario("enUS")
 scenario("deDE")
+-- The same scenario as the retail test build (branch retail-test) runs it.
+scenario("enUS", "retail")
 
 T.test("Orgrimmar for an orc, and standing names fall back to our own", function()
 	local client = newClient({ race = "Orc", standingLabels = false })
@@ -404,8 +406,55 @@ T.test("Orgrimmar for an orc, and standing names fall back to our own", function
 	local ns = client.ns
 	T.eq(ns.FactionName("CITY"), "Orgrimmar")
 	T.eq(ns.StandingName(3), "Honored")
-	client.race = "Goblin"
-	T.eq(ns.CityKey(), "STORMWIND", "unknown race: by faction")
+	local goblin = newClient({ race = "Goblin" })
+	goblin:Login(nil)
+	T.eq(goblin.ns.CityKey(), "STORMWIND", "unknown race: by faction")
+end)
+
+T.test("the capital city survives boss encounters, where the race is a secret value", function()
+	-- Logged in normally: the city is known, so a restriction later changes nothing.
+	local client = newClient({ race = "Dwarf" })
+	client:Login(nil)
+	local ns = client.ns
+	T.eq(ns.db.city, "IRONFORGE")
+	client.identityRestricted = true
+	local order = ns.Orders.Generate(false, "CITY")
+	table.insert(ns.db.orders.daily, order)
+	client.env.SlashCmdList.FORGEBORN("")
+	T.eq(ns.UI.cards[2].header:GetText():find("Ironforge", 1, true) ~= nil, true)
+	ns.Shop.Open(4)
+	T.eq(ns.Shop.parts.header.title:GetText(), "Ironforge")
+	-- Reloaded during the encounter: the saved city is used and the secret is never touched.
+	local saved = client.env.ForgebornCharDB
+	local reloaded = newClient({ race = "Dwarf" })
+	reloaded.identityRestricted = true
+	reloaded:Login(saved)
+	T.eq(reloaded.ns.FactionName("CITY"), "Ironforge")
+	T.ok(reloaded.secretRaceRead, "the race was read as a secret")
+	-- First login ever during a restriction: the faction's city until the race can be read.
+	local fresh = newClient({ race = "Dwarf" })
+	fresh.identityRestricted = true
+	fresh:Login(nil)
+	T.eq(fresh.ns.CityKey(), "STORMWIND")
+	fresh.identityRestricted = false
+	T.eq(fresh.ns.CityKey(), "IRONFORGE")
+end)
+
+T.test("Forever and retail: progress bar and order item levels", function()
+	local forever = newClient({ level = 30 })
+	forever:Login(nil)
+	T.ok(forever.ns.Compat.isForever and not forever.ns.Compat.isRetail)
+	local order = forever.ns.Orders.Generate(false, "ARGENT")
+	T.eq(order.ilvlMin, 25); T.eq(order.ilvlMax, 35)
+	forever.ns.Shop.Open(2)
+	T.ok(forever.ns.Shop.parts.header.bar.SetFillPercent and forever.ns.Shop.parts.header.bar.FillArea, "Forever's own bar")
+	local retail = newClient({ project = "retail", level = 80, avgItemLevel = 641 })
+	retail:Login(nil)
+	T.ok(retail.ns.Compat.isRetail and not retail.ns.Compat.isForever)
+	order = retail.ns.Orders.Generate(false, "ARGENT")
+	T.eq(order.ilvlMin, 631); T.eq(order.ilvlMax, 651)
+	retail.ns.Shop.Open(2)
+	T.eq(retail.ns.Shop.parts.header.bar:GetObjectType(), "StatusBar", "a plain status bar in retail")
 end)
 
 T.test("item names come from the client when it has them", function()
